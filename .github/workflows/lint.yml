@@ -23,12 +23,12 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
@@ -39,5 +39,14 @@ jobs:
         run: npm ci
         working-directory: web
 
+      - name: Install pre-commit
+        run: python -m pip install pre-commit
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+
       - name: Run pre-commit on all files
-        uses: pre-commit/action@v3.0.1
+        run: pre-commit run --show-diff-on-failure --color=always --all-files

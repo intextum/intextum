@@ -29,12 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ContentItemInfo, FolderInfo } from "@/dataProvider";
-import {
-  getContentEnrichmentReviewStatus,
-  getDocumentExtractionSchema,
-  hasNeedsReviewContentEnrichment,
-} from "@/lib/content-enrichment";
-import { getFileProcessingModeTranslationKey } from "@/lib/content-processing";
+import { buildContentListRowModel } from "@/lib/content-list-row";
 import {
   formatDate,
   formatSize,
@@ -70,11 +65,9 @@ function StatusBadge({ status }: { status?: string }) {
 
 function ReviewStateBadge({
   needsReview,
-  reviewStatus,
   t,
 }: {
   needsReview: boolean;
-  reviewStatus: string | null;
   t: (key: string) => string;
 }) {
   if (needsReview) {
@@ -87,22 +80,7 @@ function ReviewStateBadge({
       </Badge>
     );
   }
-
-  if (!reviewStatus) {
-    return null;
-  }
-
-  return (
-    <Badge variant="outline" className="text-[10px]">
-      {reviewStatus === "unreviewed"
-        ? t("review_status_unreviewed")
-        : reviewStatus === "accepted"
-          ? t("review_status_accepted")
-          : reviewStatus === "dismissed"
-            ? t("review_status_dismissed")
-            : t("review_status_corrected")}
-    </Badge>
-  );
+  return null;
 }
 
 function SortIndicator({
@@ -223,23 +201,7 @@ export function ContentListTable({
         )}
         {files.map((file) => {
           const selected = selectedFilePaths?.has(file.path) ?? false;
-          const isProcessing =
-            file.status === "QUEUED" || file.status === "PROCESSING" || file.status === "RETRYING";
-          const pathParts = file.path.split("/");
-          const folderPath = pathParts.length > 1 ? pathParts.slice(0, -1).join("/") : "";
-          const reviewStatus = getContentEnrichmentReviewStatus(
-            file.document_classification,
-            file.document_extraction,
-          );
-          const extractionSchema = getDocumentExtractionSchema(file.document_extraction);
-          const showEnrichmentIdentity =
-            file.document_classification != null ||
-            extractionSchema != null ||
-            file.document_enrichment?.classification_lifecycle?.stale === true ||
-            file.document_enrichment?.extraction_lifecycle?.stale === true;
-          const needsReview = hasNeedsReviewContentEnrichment(file.document_extraction);
-          const processingModeLabelKey = getFileProcessingModeTranslationKey(file.processing_mode);
-          const showReviewIdentity = Boolean(reviewStatus || needsReview);
+          const rowModel = buildContentListRowModel(file);
 
           return (
             <div
@@ -275,11 +237,13 @@ export function ContentListTable({
                     <div className="truncate text-sm font-medium">
                       {getContentItemDisplayName(file)}
                     </div>
-                    {folderPath && (
-                      <div className="truncate text-xs text-muted-foreground">{folderPath}</div>
+                    {rowModel.folderPath && (
+                      <div className="truncate text-xs text-muted-foreground">
+                        {rowModel.folderPath}
+                      </div>
                     )}
                   </div>
-                  <StatusBadge status={file.status} />
+                  <StatusBadge status={rowModel.visibleStatus ?? undefined} />
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                   <span>{formatSize(file.size_bytes)}</span>
@@ -290,35 +254,23 @@ export function ContentListTable({
                     })}
                   </Badge>
                 </div>
-                {showEnrichmentIdentity && (
+                {(rowModel.showDocumentClassBadge || rowModel.showNeedsReviewBadge) && (
                   <div className="flex flex-wrap items-center gap-1">
-                    <DocumentClassBadge
-                      classification={file.document_classification}
-                      classificationLifecycle={file.document_enrichment?.classification_lifecycle}
-                      extractionLifecycle={file.document_enrichment?.extraction_lifecycle}
-                      className="w-fit"
-                    />
-                    {extractionSchema && (
-                      <Badge variant="outline" className="px-1.5 py-0 font-mono text-[10px]">
-                        {extractionSchema}
-                      </Badge>
+                    {rowModel.showDocumentClassBadge && (
+                      <DocumentClassBadge
+                        classification={file.document_classification}
+                        classificationLifecycle={file.document_enrichment?.classification_lifecycle}
+                        extractionLifecycle={file.document_enrichment?.extraction_lifecycle}
+                        className="w-fit"
+                      />
+                    )}
+                    {rowModel.showNeedsReviewBadge && (
+                      <ReviewStateBadge needsReview={rowModel.showNeedsReviewBadge} t={t} />
                     )}
                   </div>
                 )}
-                {showReviewIdentity && (
-                  <div className="flex flex-wrap gap-1">
-                    <ReviewStateBadge needsReview={needsReview} reviewStatus={reviewStatus} t={t} />
-                  </div>
-                )}
-                {processingModeLabelKey &&
-                  file.processing_mode?.mode !== "full" &&
-                  file.status === "COMPLETED" && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      {translate(processingModeLabelKey)}
-                    </Badge>
-                  )}
               </div>
-              {onProcess && !isProcessing && (
+              {onProcess && !rowModel.isProcessing && (
                 <Button
                   size="icon"
                   variant="ghost"
@@ -421,27 +373,7 @@ export function ContentListTable({
             ))}
             {files.map((file) => {
               const selected = selectedFilePaths?.has(file.path) ?? false;
-              const isProcessing =
-                file.status === "QUEUED" ||
-                file.status === "PROCESSING" ||
-                file.status === "RETRYING";
-              const pathParts = file.path.split("/");
-              const folderPath = pathParts.length > 1 ? pathParts.slice(0, -1).join("/") : "";
-              const reviewStatus = getContentEnrichmentReviewStatus(
-                file.document_classification,
-                file.document_extraction,
-              );
-              const extractionSchema = getDocumentExtractionSchema(file.document_extraction);
-              const showEnrichmentIdentity =
-                file.document_classification != null ||
-                extractionSchema != null ||
-                file.document_enrichment?.classification_lifecycle?.stale === true ||
-                file.document_enrichment?.extraction_lifecycle?.stale === true;
-              const needsReview = hasNeedsReviewContentEnrichment(file.document_extraction);
-              const processingModeLabelKey = getFileProcessingModeTranslationKey(
-                file.processing_mode,
-              );
-              const showReviewIdentity = Boolean(reviewStatus || needsReview);
+              const rowModel = buildContentListRowModel(file);
 
               return (
                 <TableRow
@@ -472,48 +404,29 @@ export function ContentListTable({
                         <span className="block truncate text-sm">
                           {getContentItemDisplayName(file)}
                         </span>
-                        {showEnrichmentIdentity && (
-                          <div className="mt-1 flex flex-wrap items-center gap-1">
-                            <DocumentClassBadge
-                              classification={file.document_classification}
-                              classificationLifecycle={
-                                file.document_enrichment?.classification_lifecycle
-                              }
-                              extractionLifecycle={file.document_enrichment?.extraction_lifecycle}
-                              className="w-fit"
-                            />
-                            {extractionSchema && (
-                              <Badge
-                                variant="outline"
-                                className="px-1.5 py-0 font-mono text-[10px]"
-                              >
-                                {extractionSchema}
-                              </Badge>
+                        {(rowModel.folderPath ||
+                          rowModel.showDocumentClassBadge ||
+                          rowModel.showNeedsReviewBadge) && (
+                          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+                            {rowModel.folderPath && (
+                              <span className="min-w-0 max-w-full truncate text-xs text-muted-foreground">
+                                {rowModel.folderPath}
+                              </span>
+                            )}
+                            {rowModel.showDocumentClassBadge && (
+                              <DocumentClassBadge
+                                classification={file.document_classification}
+                                classificationLifecycle={
+                                  file.document_enrichment?.classification_lifecycle
+                                }
+                                extractionLifecycle={file.document_enrichment?.extraction_lifecycle}
+                                className="w-fit"
+                              />
+                            )}
+                            {rowModel.showNeedsReviewBadge && (
+                              <ReviewStateBadge needsReview={rowModel.showNeedsReviewBadge} t={t} />
                             )}
                           </div>
-                        )}
-                        {showReviewIdentity && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            <ReviewStateBadge
-                              needsReview={needsReview}
-                              reviewStatus={reviewStatus}
-                              t={t}
-                            />
-                          </div>
-                        )}
-                        {processingModeLabelKey &&
-                          file.processing_mode?.mode !== "full" &&
-                          file.status === "COMPLETED" && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="text-[10px]">
-                                {translate(processingModeLabelKey)}
-                              </Badge>
-                            </div>
-                          )}
-                        {folderPath && (
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {folderPath}
-                          </span>
                         )}
                       </div>
                     </div>
@@ -532,10 +445,10 @@ export function ContentListTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={file.status} />
+                    <StatusBadge status={rowModel.visibleStatus ?? undefined} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {onProcess && !isProcessing && (
+                    {onProcess && !rowModel.isProcessing && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

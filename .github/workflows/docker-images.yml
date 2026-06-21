@@ -42,21 +42,21 @@ jobs:
             image: backend
             context: ./backend
             file: ./backend/Dockerfile
-            platforms: linux/amd64
+            platforms: linux/amd64,linux/arm64
             build_on_pr: true
             build_args: ""
           - name: frontend
             image: frontend
             context: ./frontend
             file: ./frontend/Dockerfile
-            platforms: linux/amd64
+            platforms: linux/amd64,linux/arm64
             build_on_pr: true
             build_args: ""
           - name: worker-cpu
             image: worker-cpu
             context: ./worker
             file: ./worker/Dockerfile
-            platforms: linux/amd64
+            platforms: linux/amd64,linux/arm64
             build_on_pr: true
             build_args: |
               WORKER_REQUIREMENTS=cpu.txt
@@ -77,6 +77,10 @@ jobs:
       - name: Checkout
         if: matrix.build_on_pr || github.event_name != 'pull_request'
         uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        if: contains(matrix.platforms, 'linux/arm64') && (matrix.build_on_pr || github.event_name != 'pull_request')
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         if: matrix.build_on_pr || github.event_name != 'pull_request'

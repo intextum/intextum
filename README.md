@@ -66,6 +66,22 @@ backend runtime connections use the non-owner role.
 - `data/` sample/attached data volumes
 - `config.example.yaml` local configuration template
 
+## Development
+
+Formatting and linting run on staged files via [pre-commit](https://pre-commit.com).
+Install the hook once per clone:
+
+```bash
+pip install pre-commit
+pre-commit install
+(cd web && npm ci)   # eslint/prettier hooks use web/node_modules
+```
+
+It runs ruff (check + format) on `api/` and `worker/` and eslint + prettier on
+`web/`; run everything with `pre-commit run --all-files`. CI enforces the same
+hooks (`.github/workflows/lint.yml`), so the local hook is only fast feedback and
+can be bypassed with `git commit --no-verify`.
+
 ## Worker runtimes
 
 The Docker Compose worker is disabled for local development by default. On macOS,

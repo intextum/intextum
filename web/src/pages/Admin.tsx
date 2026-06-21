@@ -4,6 +4,7 @@ import {
   Bot,
   Cpu,
   Database,
+  Globe,
   type LucideIcon,
   ScanSearch,
   Shield,
@@ -27,6 +28,7 @@ import { DataConnectorsPage } from "@/pages/DataConnectors";
 import { WorkersPage } from "@/pages/Workers";
 import { AuthAdminPanel } from "@/pages/admin/AuthAdminPanel";
 import { ChatPromptPresetsPanel } from "@/pages/admin/ChatPromptPresetsPanel";
+import { GeneralSettingsPanel } from "@/pages/admin/GeneralSettingsPanel";
 import { AiSettingsPanel } from "@/pages/settings/AiSettingsPanel";
 
 const ADMIN_TABS = [
@@ -37,6 +39,7 @@ const ADMIN_TABS = [
   "content-enrichment-settings",
   "image-description",
   "data-connectors",
+  "general",
   "auth",
   "workers",
 ] as const;
@@ -102,6 +105,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   {
     id: "system",
     items: [
+      { tab: "general", icon: Globe, labelKey: "custom.pages.admin.tabs.general" },
       { tab: "auth", icon: Users, labelKey: "custom.pages.admin.tabs.auth" },
       { tab: "workers", icon: Cpu, labelKey: "custom.pages.admin.tabs.workers" },
     ],
@@ -156,6 +160,8 @@ function renderTabContent(tab: AdminTab, contentEnrichmentRouting: ContentEnrich
       return <AiSettingsPanel section="image_description" />;
     case "data-connectors":
       return <DataConnectorsPage embedded />;
+    case "general":
+      return <GeneralSettingsPanel />;
     case "auth":
       return <AuthAdminPanel />;
     case "workers":

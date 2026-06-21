@@ -13,6 +13,7 @@ from .admin.content_enrichment_training import (
     router as content_enrichment_training_router,
 )
 from .admin.data_connectors import router as data_connectors_router
+from .admin.general_settings import router as general_settings_router
 from .admin.groups import router as groups_router
 from .admin.connector_permissions import router as connector_permissions_router
 from .admin.users import router as users_router
@@ -25,6 +26,7 @@ router.include_router(content_enrichment_catalog_router)
 router.include_router(content_enrichment_training_router)
 router.include_router(connector_permissions_router)
 router.include_router(data_connectors_router)
+router.include_router(general_settings_router)
 router.include_router(groups_router)
 router.include_router(users_router)
 

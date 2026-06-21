@@ -54,6 +54,25 @@ export interface WorkerTaskQueueCleanupResponse {
   failed: number;
 }
 
+export interface WorkerInstallPlatform {
+  id: string;
+  label: string;
+  kind: "pip" | "docker";
+  extra: string | null;
+  extra_index_url: string | null;
+  image: string | null;
+  gpu: boolean;
+  notes: string | null;
+}
+
+export interface WorkerInstallInfo {
+  package: string;
+  version: string;
+  default_capabilities: string;
+  public_url: string | null;
+  platforms: WorkerInstallPlatform[];
+}
+
 export const workersApi = {
   list: async (): Promise<WorkerListResponse> => {
     const { json } = await httpClient(`${apiUrl}/workers/`);
@@ -108,6 +127,11 @@ export const workersApi = {
     const { json } = await httpClient(`${apiUrl}/workers/${id}/rotate-token`, {
       method: "POST",
     });
+    return json;
+  },
+
+  installInfo: async (): Promise<WorkerInstallInfo> => {
+    const { json } = await httpClient(`${apiUrl}/workers/install-info`);
     return json;
   },
 };

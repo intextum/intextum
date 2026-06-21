@@ -64,3 +64,14 @@ def test_onnxruntime_package_extras_pin_numpy_below_two():
 
     for extra in ("document", "enrichment"):
         assert "numpy<2" in [dependency.lower() for dependency in extras[extra]]
+
+
+def test_content_enrichment_profiles_include_openai_client():
+    requirements = _requirements_text("content-enrichment.txt").lower()
+    extras = _pyproject_optional_dependencies()
+    enrichment_dependencies = [
+        dependency.lower() for dependency in extras["enrichment"]
+    ]
+
+    assert "openai>=1.0.0,<2.0.0" in requirements
+    assert "openai>=1.0.0,<2.0.0" in enrichment_dependencies

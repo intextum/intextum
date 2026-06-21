@@ -65,6 +65,8 @@ cpu = [
     "torchvision==0.21.0+cpu ; platform_system == 'Linux' and platform_machine == 'x86_64'",
     "torch==2.6.0 ; platform_system == 'Linux' and platform_machine != 'x86_64'",
     "torchvision==0.21.0 ; platform_system == 'Linux' and platform_machine != 'x86_64'",
+    "torch==2.6.0+cpu ; platform_system == 'Windows'",
+    "torchvision==0.21.0+cpu ; platform_system == 'Windows'",
 ]
 cpu-document = [
     "intextum-worker[document]",
@@ -72,11 +74,15 @@ cpu-document = [
     "torchvision==0.21.0+cpu ; platform_system == 'Linux' and platform_machine == 'x86_64'",
     "torch==2.6.0 ; platform_system == 'Linux' and platform_machine != 'x86_64'",
     "torchvision==0.21.0 ; platform_system == 'Linux' and platform_machine != 'x86_64'",
+    "torch==2.6.0+cpu ; platform_system == 'Windows'",
+    "torchvision==0.21.0+cpu ; platform_system == 'Windows'",
 ]
 cuda = [
     "intextum-worker[full]",
     "torch==2.6.0+cu126 ; platform_system == 'Linux'",
     "torchvision==0.21.0+cu126 ; platform_system == 'Linux'",
+    "torch==2.6.0+cu126 ; platform_system == 'Windows'",
+    "torchvision==0.21.0+cu126 ; platform_system == 'Windows'",
 ]
 test = [
     "pytest>=9.0.3,<10.0",

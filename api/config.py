@@ -201,6 +201,11 @@ class Settings(BaseSettings):
     # Runtime environment
     APP_ENV: str = "development"
 
+    # Public base URL the app is reachable at (scheme + host, no trailing slash),
+    # e.g. https://dms.example.org. Used to build the API URL workers connect to.
+    # An admin-set value in the General settings UI overrides this.
+    PUBLIC_BASE_URL: str = ""
+
     # Encryption (Fernet key for encrypting secrets at rest)
     ENCRYPTION_KEY: str = ""
 

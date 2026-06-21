@@ -8,6 +8,10 @@
 #   APP_DOMAIN
 #   APP_SCHEME (default: http)
 # app_env: development  # Set to production to enable fail-fast safety checks.
+# Public base URL the app is reachable at (scheme + host, no trailing slash).
+# Used to build the API URL that workers connect to. An admin value set in the
+# General settings UI overrides this.
+# public_base_url: https://dms.example.org
 # valkey_url: redis://valkey:6379/0
 # cors_allow_origins: "http://your-domain.example,http://localhost:5173"
 

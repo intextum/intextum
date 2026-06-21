@@ -48,6 +48,40 @@ class WorkerListResponse(BaseModel):
     total: int
 
 
+class WorkerInstallPlatform(BaseModel):
+    """One install target for the Add-Worker onboarding flow.
+
+    Either a ``pip`` install (``extra`` + optional ``extra_index_url``) or a
+    ``docker`` run (``image`` + optional ``gpu``). The client renders the right
+    command for ``kind``.
+    """
+
+    id: str
+    label: str
+    kind: Literal["pip", "docker"] = "pip"
+    extra: str | None = None
+    extra_index_url: str | None = None
+    image: str | None = None
+    gpu: bool = False
+    notes: str | None = None
+
+
+class WorkerInstallInfo(BaseModel):
+    """Everything the Add-Worker UI needs to render a copy-paste install command.
+
+    The token is never included here — it is shown once at create/rotate time and
+    injected by the client.
+    """
+
+    package: str
+    version: str
+    default_capabilities: str
+    # Configured public base URL workers should poll, or null to let the client
+    # fall back to the request origin.
+    public_url: str | None = None
+    platforms: list[WorkerInstallPlatform]
+
+
 class WorkerTaskQueueItem(BaseModel):
     """Admin-facing summary of one backend queue task."""
 

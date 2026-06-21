@@ -12,16 +12,83 @@ from models.worker import (
     WorkerUpdate,
     WorkerResponse,
     WorkerCreateResponse,
+    WorkerInstallInfo,
+    WorkerInstallPlatform,
     WorkerListResponse,
     WorkerTaskQueueCleanupResponse,
     WorkerTaskQueueListResponse,
 )
 from services.worker import WorkerService
+from services.general_settings import GeneralSettingsService
 from database import get_db
 from rls import set_rls_context, user_context
+from version import get_app_version
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Default capabilities a worker is started with (mirrors the compose default).
+_DEFAULT_WORKER_CAPABILITIES = "document,video,image"
+
+# GHCR namespace for the prebuilt worker images (REGISTRY/github.repository).
+_WORKER_IMAGE_BASE = "ghcr.io/intextum/intextum"
+
+_PYTORCH_CPU_INDEX = "https://download.pytorch.org/whl/cpu"
+_PYTORCH_CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
+
+# Install targets for the Add-Worker onboarding flow. macOS Torch wheels are on
+# PyPI (no extra index); Linux/Windows CPU/CUDA builds come from the PyTorch
+# index; Docker targets use the prebuilt GHCR images.
+_WORKER_INSTALL_PLATFORMS: list[WorkerInstallPlatform] = [
+    WorkerInstallPlatform(
+        id="macos-mps",
+        label="macOS (Apple Silicon · MPS)",
+        kind="pip",
+        extra="mps",
+        notes="Uses Apple's native Vision OCR (ocrmac) and MPS acceleration.",
+    ),
+    WorkerInstallPlatform(
+        id="linux-cpu",
+        label="Linux (CPU)",
+        kind="pip",
+        extra="cpu",
+        extra_index_url=_PYTORCH_CPU_INDEX,
+    ),
+    WorkerInstallPlatform(
+        id="linux-cuda",
+        label="Linux (NVIDIA CUDA 12.6)",
+        kind="pip",
+        extra="cuda",
+        extra_index_url=_PYTORCH_CUDA_INDEX,
+    ),
+    WorkerInstallPlatform(
+        id="windows-cpu",
+        label="Windows (CPU)",
+        kind="pip",
+        extra="cpu",
+        extra_index_url=_PYTORCH_CPU_INDEX,
+    ),
+    WorkerInstallPlatform(
+        id="windows-cuda",
+        label="Windows (NVIDIA CUDA 12.6)",
+        kind="pip",
+        extra="cuda",
+        extra_index_url=_PYTORCH_CUDA_INDEX,
+    ),
+    WorkerInstallPlatform(
+        id="docker-cpu",
+        label="Docker (CPU)",
+        kind="docker",
+        image=f"{_WORKER_IMAGE_BASE}/worker-cpu",
+    ),
+    WorkerInstallPlatform(
+        id="docker-cuda",
+        label="Docker (NVIDIA CUDA)",
+        kind="docker",
+        image=f"{_WORKER_IMAGE_BASE}/worker-cuda",
+        gpu=True,
+    ),
+]
 
 
 async def get_worker_service(
@@ -64,6 +131,25 @@ async def cleanup_stale_worker_tasks(
 ):
     """Run stale claimed-task cleanup immediately."""
     return WorkerTaskQueueCleanupResponse(**await service.cleanup_stale_tasks())
+
+
+@router.get("/install-info", response_model=WorkerInstallInfo)
+async def get_install_info(
+    _user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return package/version + per-platform install targets for the Add-Worker UI.
+
+    Declared before ``/{worker_id}`` so the static path is not captured as an id.
+    """
+    public_url = await GeneralSettingsService(db).get_public_base_url()
+    return WorkerInstallInfo(
+        package="intextum-worker",
+        version=get_app_version(),
+        default_capabilities=_DEFAULT_WORKER_CAPABILITIES,
+        public_url=public_url,
+        platforms=_WORKER_INSTALL_PLATFORMS,
+    )
 
 
 @router.post(

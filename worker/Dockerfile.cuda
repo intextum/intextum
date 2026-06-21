@@ -1,0 +1,33 @@
+FROM nvidia/cuda:12.4.1-runtime-ubuntu24.04
+
+WORKDIR /app
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CLASSIFICATION_DEVICE=cuda
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
+    python3-pip \
+    libgl1 \
+    libglib2.0-0 \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/local/bin/pip \
+    && python --version | grep -E '^Python 3\.12\.'
+
+ARG WORKER_REQUIREMENTS=cuda.txt
+COPY requirements ./requirements
+RUN pip install --no-cache-dir -r "requirements/${WORKER_REQUIREMENTS}"
+
+COPY . .
+
+RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin worker \
+    && chown -R worker:worker /app /home/worker
+
+ENV HOME=/home/worker
+USER worker
+
+CMD ["python", "main.py"]

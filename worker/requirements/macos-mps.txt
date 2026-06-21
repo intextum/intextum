@@ -1,0 +1,7 @@
+-r base.txt
+-r document.txt
+-r asr.txt
+-r content-enrichment.txt
+
+torch==2.6.0 ; platform_system == "Darwin"
+torchvision==0.21.0 ; platform_system == "Darwin"

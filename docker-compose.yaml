@@ -1,0 +1,136 @@
+# Shared application version for all components. The canonical value is the
+# repo-root VERSION file, which is mounted into each container and read at
+# runtime. Setting APP_VERSION in the environment overrides it (e.g. in CI).
+x-app-version: &app_version "${APP_VERSION:-}"
+
+services:
+  traefik:
+    image: traefik:v3
+    # TODO(prod): add Traefik rate-limit middleware for /api/worker/* and upload endpoints.
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-intextum_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: ./worker
+    restart: unless-stopped
+    scale: 0
+    volumes:
+      - ./VERSION:/VERSION:ro
+      - worker_output:/app/output
+      - huggingface_cache:/home/worker/.cache/huggingface
+      - docling_cache:/home/worker/.cache/docling
+    env_file: .env
+    environment:
+      APP_VERSION: *app_version
+      BACKEND_URL: http://backend:8000
+      WORKER_TOKEN: ${WORKER_TOKEN:-}
+      WORK_DIR: /tmp/worker
+      CAPABILITIES: ${WORKER_CAPABILITIES:-document,video,image}
+      POLL_INTERVAL: ${WORKER_POLL_INTERVAL:-5}
+      # easyocr | rapidocr | tesseract | tesseract_cli | ocrmac
+      DOCLING_OCR_ENGINE: ${WORKER_DOCLING_OCR_ENGINE:-easyocr}
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    volumes:
+      - ./VERSION:/VERSION:ro
+      - ./config.yaml:/config/config.yaml:ro
+    environment:
+      APP_VERSION: *app_version
+      CONFIG_FILE: /config/config.yaml
+      AUTH_PROXY_ENABLED: "false"
+      AUTH_LOCAL_ENABLED: "true"
+      AUTH_BOOTSTRAP_ADMIN_USERNAME: ${AUTH_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      AUTH_BOOTSTRAP_ADMIN_EMAIL: ${AUTH_BOOTSTRAP_ADMIN_EMAIL:-admin@example.invalid}
+      AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME: ${AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME:-Admin}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      VALKEY_URL: ${VALKEY_URL:-redis://valkey:6379/0}
+      CHAT_RUNNER_ENABLED: ${CHAT_RUNNER_ENABLED:-true}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-api.entrypoints=web"
+      - "traefik.http.routers.backend-api.service=backend-direct"
+      - "traefik.http.routers.backend-api.priority=20"
+      - "traefik.http.routers.worker-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api/worker/`)"
+      - "traefik.http.routers.worker-api.entrypoints=web"
+      - "traefik.http.routers.worker-api.service=backend-direct"
+      - "traefik.http.routers.worker-api.priority=30"
+      - "traefik.http.services.backend-direct.loadbalancer.server.port=8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./VERSION:/VERSION:ro
+    environment:
+      APP_VERSION: *app_version
+      APP_BRAND_TITLE: ${APP_BRAND_TITLE:-Intextum}
+      # No subtitle default: the UI shows the version when this is unset.
+      APP_BRAND_SUBTITLE: ${APP_BRAND_SUBTITLE:-}
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.service=frontend"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  valkey_data:
+  worker_output:
+  huggingface_cache:
+  docling_cache:

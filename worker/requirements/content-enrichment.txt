@@ -1,0 +1,5 @@
+transformers>=4.38.0
+gliner2>=0.1.0
+langgraph>=1.1.8
+sentencepiece
+protobuf

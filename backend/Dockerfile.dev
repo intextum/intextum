@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+ARG APP_UID=10001
+ARG APP_GID=10001
+
+RUN groupadd --gid "${APP_GID}" app && \
+    useradd --uid "${APP_UID}" --gid app --create-home --shell /usr/sbin/nologin app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends acl && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt watchfiles
+
+COPY --chown=app:app . .
+
+USER app
+
+CMD ["sh", "./scripts/start-backend.sh", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

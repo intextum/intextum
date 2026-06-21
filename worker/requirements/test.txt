@@ -1,0 +1,4 @@
+-r base.txt
+
+pytest>=9.0.3,<10.0
+pytest-asyncio>=1.4.0,<2.0.0

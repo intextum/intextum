@@ -1,0 +1,133 @@
+# intextum Configuration File
+# =====================
+# Set CONFIG_FILE=/app/config.yaml (or your path) to enable.
+# Values set here override environment variables and .env file.
+
+# --- Services ---
+# Compose defaults use:
+#   APP_DOMAIN
+#   APP_SCHEME (default: http)
+# app_env: development  # Set to production to enable fail-fast safety checks.
+# valkey_url: redis://valkey:6379/0
+# cors_allow_origins: "http://your-domain.example,http://localhost:5173"
+
+# --- File System ---
+# data_volume: /data
+# extracted_data_dir: /extracted
+# model_artifacts_dir: /model-artifacts
+# db_dir: /app/data
+
+# --- Database ---
+# postgres_user: postgres
+# postgres_password: postgres
+# postgres_app_user: dms_app
+# postgres_app_password: dms_app
+# postgres_db: intextum_db
+# postgres_host: postgres
+# postgres_port: 5432
+
+# --- Data Sources ---
+# Data sources are managed in the admin UI and stored in the database.
+# check_interval: 30
+# Native YAML list — no comma-separated string needed.
+# acl_admin_groups:
+#   - "5501"
+#   - admins
+#   - administrators
+
+# --- Embedding ---
+# embedding_api_base: http://localhost:11434/v1
+# embedding_api_key: ollama
+# embedding_model: bge-m3
+# embedding_vector_size: 1024
+# embedding_max_tokens: 8192
+
+# --- Chat (LLM) ---
+# chat_api_base: http://localhost:11434/v1
+# chat_api_key: ollama
+# chat_model: qwen3-vl:8b
+# document_extraction_chunk_strategy: full  # full | selected
+# chat_system_prompt: |
+#   Your custom system prompt here.
+#   Supports multi-line YAML strings.
+# chat_tool_prompt: |
+#   ## Available Tools
+#
+#   You can call search_documents and get_document.
+#   Cite search results with [1], [2], etc.
+# chat_search_limit: 10
+# chat_document_max_chars: 30000
+
+# --- Picture Description (VLM) ---
+# picture_description_url: http://localhost:11434
+# picture_description_model: qwen3-vl:8b
+# picture_description_prompt: "Describe the image in three sentences. Be concise and accurate."
+
+# --- Auth Providers ---
+# auth_proxy_enabled: false
+# auth_local_enabled: true
+# auth_dev_enabled: false
+#
+# Proxy auth requires Traefik/oauth2-proxy to inject this shared secret.
+# Keep the config value in sync with the AUTH_PROXY_SECRET environment variable.
+# auth_proxy_secret: "set-a-strong-random-shared-secret"
+#
+# --- Auth Headers (Proxy) ---
+# auth_header_user: X-Forwarded-User
+# auth_header_sub: X-Forwarded-User
+# auth_header_sub must point to a stable subject identifier from the auth proxy.
+# auth_header_email: X-Forwarded-Email
+# auth_header_groups: X-Forwarded-Groups
+# auth_header_preferred_username: X-Forwarded-Preferred-Username
+# auth_header_uid: X-Forwarded-Uid
+# auth_header_gids: X-Forwarded-Gids
+#
+# Numeric-ID mode example (OIDC sub=uidNumber, groups=gidNumber):
+# auth_header_user: X-Forwarded-Email
+# auth_header_sub: X-Forwarded-User
+# auth_header_uid: X-Forwarded-User
+# auth_header_groups: X-Forwarded-Groups
+# auth_header_gids: X-Forwarded-Groups
+#
+# --- Local Auth Sessions ---
+# Local auth requires valkey_url and bootstraps one admin user if no local admin exists.
+# auth_session_cookie_name: intextum_session
+# auth_session_idle_ttl_seconds: 3600
+# auth_session_absolute_ttl_seconds: 604800
+# auth_session_secure_cookie: false
+# auth_csrf_cookie_name: intextum_csrf
+# auth_csrf_header_name: X-CSRF-Token
+#
+# --- Local Auth Password Policy ---
+# auth_password_min_length: 12
+# auth_password_reject_common: true
+#
+# --- Local Auth Login Throttling ---
+# auth_login_throttle_enabled: true
+# auth_login_max_attempts: 5
+# auth_login_window_seconds: 300
+# auth_login_lockout_seconds: 900
+#
+# auth_bootstrap_admin_username: admin
+# auth_bootstrap_admin_password: ""
+# auth_bootstrap_admin_email: ""
+# auth_bootstrap_admin_display_name: Admin
+#
+# --- Development Auth ---
+# Never enable dev auth in production.
+# auth_dev_username: dev
+# auth_dev_sub: dev:local
+# auth_dev_email: dev@example.invalid
+# auth_dev_groups:
+#   - admins
+
+# --- Secret Storage ---
+# encryption_key: "base64url-encoded-fernet-key"
+
+# --- Logging ---
+# log_json_format: true
+# log_level: INFO
+
+# --- Upload Limits ---
+# max_upload_file_size_bytes: 52428800
+# max_upload_batch_size_bytes: 209715200

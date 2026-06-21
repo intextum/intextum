@@ -1,0 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cu124
+
+-r base.txt
+-r document.txt
+-r asr.txt
+-r content-enrichment.txt
+
+torch==2.6.0+cu124 ; platform_system == "Linux"
+torchvision==0.21.0+cu124 ; platform_system == "Linux"

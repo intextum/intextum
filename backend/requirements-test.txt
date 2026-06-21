@@ -1,0 +1,4 @@
+-r requirements.txt
+
+pytest>=9.0,<10.0
+pytest-docker==3.2.5

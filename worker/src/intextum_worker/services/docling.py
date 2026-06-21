@@ -204,25 +204,30 @@ def _build_accelerator_options(
     return AcceleratorOptions(num_threads=settings.DOCLING_THREADS, device=accel_device)
 
 
-def _enable_torch_dynamo_eager_fallback_for_mps(device: str | None) -> None:
-    """Let MPS fall back to eager execution when Torch compiler lowering fails."""
+def _convert_with_torch_dynamo_disabled_for_mps(
+    doc_converter: DocumentConverter,
+    file_path: Path,
+    *,
+    device: str | None,
+) -> ConversionResult:
+    """Run MPS Docling conversion without repeated Torch Dynamo compile attempts."""
     if device != "mps":
-        return
+        return doc_converter.convert(file_path)
 
     try:
         torch_dynamo = importlib.import_module("torch._dynamo")
     except Exception as exc:  # pragma: no cover - depends on optional torch layout
-        logger.debug("Torch Dynamo fallback not available for MPS: %s", exc)
-        return
+        logger.debug("Torch Dynamo disable not available for MPS: %s", exc)
+        return doc_converter.convert(file_path)
 
-    config = getattr(torch_dynamo, "config", None)
-    if config is None:
-        logger.debug("Torch Dynamo fallback not available for MPS: missing config")
-        return
+    disable = getattr(torch_dynamo, "disable", None)
+    if not callable(disable):
+        logger.debug("Torch Dynamo disable not available for MPS")
+        return doc_converter.convert(file_path)
 
-    if getattr(config, "suppress_errors", None) is not True:
-        config.suppress_errors = True
-        logger.info("Enabled Torch Dynamo eager fallback for MPS Docling conversion")
+    logger.info("Disabled Torch Dynamo for MPS Docling conversion")
+    convert = disable(doc_converter.convert, recursive=True)
+    return convert(file_path)
 
 
 def _configure_pipeline_options(
@@ -291,7 +296,6 @@ def _configure_pipeline_options(
         timeout=max(1.0, float(config.picture_description_timeout_seconds)),
     )
     pipeline_options.accelerator_options = _build_accelerator_options()
-    _enable_torch_dynamo_eager_fallback_for_mps(settings.CLASSIFICATION_DEVICE)
     return pipeline_options
 
 
@@ -335,7 +339,11 @@ def run_docling_conversion(
         },
     )
     logger.info("Starting Docling conversion for %s", file_path)
-    return doc_converter.convert(file_path)
+    return _convert_with_torch_dynamo_disabled_for_mps(
+        doc_converter,
+        file_path,
+        device=settings.CLASSIFICATION_DEVICE,
+    )
 
 
 def run_asr_conversion(audio_path: Path):

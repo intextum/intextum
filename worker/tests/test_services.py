@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from intextum_worker.models import CustomConfig, WorkerRuntimeConfig
 from intextum_worker.services.docling import (
     _configure_pipeline_options,
-    _enable_torch_dynamo_eager_fallback_for_mps,
+    _convert_with_torch_dynamo_disabled_for_mps,
     describe_image_via_vlm,
     get_custom_config,
 )
@@ -169,23 +169,46 @@ class TestDoclingService:
         assert options.ocr_options.lang == ["de-DE"]
         mock_warning.assert_called_once()
 
-    def test_enables_torch_dynamo_eager_fallback_for_mps(self):
-        config = SimpleNamespace(suppress_errors=False)
-        torch_dynamo = SimpleNamespace(config=config)
+    def test_disables_torch_dynamo_for_mps_conversion(self, tmp_path):
+        converter = MagicMock()
+        converter.convert = MagicMock(return_value="direct")
+        disabled_convert = MagicMock(return_value="disabled")
+        torch_dynamo = SimpleNamespace(
+            disable=MagicMock(return_value=disabled_convert),
+        )
+        file_path = tmp_path / "document.pdf"
 
         with patch.dict(sys.modules, {"torch._dynamo": torch_dynamo}):
-            _enable_torch_dynamo_eager_fallback_for_mps("mps")
+            result = _convert_with_torch_dynamo_disabled_for_mps(
+                converter,
+                file_path,
+                device="mps",
+            )
 
-        assert config.suppress_errors is True
+        assert result == "disabled"
+        torch_dynamo.disable.assert_called_once_with(
+            converter.convert,
+            recursive=True,
+        )
+        disabled_convert.assert_called_once_with(file_path)
+        converter.convert.assert_not_called()
 
-    def test_leaves_torch_dynamo_fallback_disabled_for_cpu(self):
-        config = SimpleNamespace(suppress_errors=False)
-        torch_dynamo = SimpleNamespace(config=config)
+    def test_uses_direct_conversion_for_cpu(self, tmp_path):
+        converter = MagicMock()
+        converter.convert = MagicMock(return_value="direct")
+        torch_dynamo = SimpleNamespace(disable=MagicMock())
+        file_path = tmp_path / "document.pdf"
 
         with patch.dict(sys.modules, {"torch._dynamo": torch_dynamo}):
-            _enable_torch_dynamo_eager_fallback_for_mps("cpu")
+            result = _convert_with_torch_dynamo_disabled_for_mps(
+                converter,
+                file_path,
+                device="cpu",
+            )
 
-        assert config.suppress_errors is False
+        assert result == "direct"
+        converter.convert.assert_called_once_with(file_path)
+        torch_dynamo.disable.assert_not_called()
 
 
 class TestAsrLanguageConfig:

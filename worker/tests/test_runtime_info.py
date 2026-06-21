@@ -1,7 +1,10 @@
 """Tests for worker runtime validation and metadata."""
 
+import os
+
 import pytest
 
+from intextum_worker.main import _resolve_classification_device
 from intextum_worker.runtime_info import (
     build_runtime_metadata,
     runtime_dependencies_for_capabilities,
@@ -71,6 +74,30 @@ def test_validate_accelerator_rejects_unavailable_cuda():
 
 def test_validate_accelerator_skip_check_allows_unavailable_accelerator():
     validate_accelerator("cuda", skip_check=True, system="Linux", torch_probe={})
+
+
+def test_resolve_classification_device_disables_torchdynamo_on_mps(monkeypatch):
+    monkeypatch.setattr("platform.system", lambda: "Darwin")
+    monkeypatch.delenv("CLASSIFICATION_DEVICE", raising=False)
+    monkeypatch.delenv("PYTORCH_ENABLE_MPS_FALLBACK", raising=False)
+    monkeypatch.delenv("TORCHDYNAMO_DISABLE", raising=False)
+
+    device = _resolve_classification_device("mps")
+
+    assert device == "mps"
+    assert os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] == "1"
+    assert os.environ["TORCHDYNAMO_DISABLE"] == "1"
+
+
+def test_resolve_classification_device_leaves_torchdynamo_for_cpu(monkeypatch):
+    monkeypatch.setattr("platform.system", lambda: "Darwin")
+    monkeypatch.delenv("CLASSIFICATION_DEVICE", raising=False)
+    monkeypatch.delenv("TORCHDYNAMO_DISABLE", raising=False)
+
+    device = _resolve_classification_device("cpu")
+
+    assert device == "cpu"
+    assert "TORCHDYNAMO_DISABLE" not in os.environ
 
 
 def test_runtime_dependencies_for_video_include_audio_asr():

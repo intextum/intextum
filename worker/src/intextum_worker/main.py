@@ -103,6 +103,7 @@ def _resolve_classification_device(cli_device: str | None) -> str:
     # Keep behavior parity with previous shell script on macOS.
     if platform.system() == "Darwin" and device == "mps":
         os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+        os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")
 
     return device
 

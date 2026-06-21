@@ -85,18 +85,8 @@ can be bypassed with `git commit --no-verify`.
 ## Worker runtimes
 
 The Docker Compose worker is disabled for local development by default. On macOS,
-run the worker directly on the host so Torch can use Apple MPS:
-
-```bash
-worker/scripts/setup-macos-mps.sh
-WORKER_TOKEN=... API_URL=http://localhost:8000 worker/scripts/run-macos-mps.sh
-```
-
-The host helper defaults to `CLASSIFICATION_DEVICE=mps`,
-`PYTORCH_ENABLE_MPS_FALLBACK=1`, `DOCLING_OCR_ENGINE=ocrmac`,
-`ASR_MODEL=whisper_large_v3`, and `WORK_DIR=/tmp/intextum-worker`.
-Set `ASR_MODEL=whisper_medium` or `ASR_MODEL=whisper_turbo` when you prefer
-speed over transcript quality.
+run the worker directly on the host so Torch can use Apple MPS. See
+`worker/README.md` for the editable install and manual run commands.
 
 Docker worker images are split by Linux runtime:
 
@@ -115,14 +105,6 @@ document/image-only CPU image:
 
 ```bash
 docker build -f worker/Dockerfile --build-arg WORKER_REQUIREMENTS=cpu-document.txt worker
-```
-
-When running the worker directly on macOS, use the MPS helper so Docling, ASR,
-and enrichment dependencies are installed into `worker/.venv-mps`:
-
-```bash
-worker/scripts/setup-macos-mps.sh
-worker/scripts/run-macos-mps.sh --api-url=http://localhost:8000 --capabilities document,video,image,training
 ```
 
 MP3/WAV/M4A tasks are claimed through the `video` capability because the worker

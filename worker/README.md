@@ -54,7 +54,9 @@ source of truth for the version; it is staged into `worker/VERSION` at build tim
 cp ../VERSION VERSION           # stage the version for an editable install
 pip install -e '.[mps,test]'    # or [cpu,test] / [cuda,test]
 pytest
-```
 
-On macOS, `scripts/setup-macos-mps.sh` does the venv + editable install for you,
-and `scripts/run-macos-mps.sh` launches the worker with MPS defaults.
+export API_URL="http://localhost:8000"
+export WORKER_TOKEN="<token from the Add Worker dialog>"
+export CLASSIFICATION_DEVICE="mps"   # macOS Apple Silicon; use cpu/cuda elsewhere
+intextum-worker --capabilities document,video,image,training
+```

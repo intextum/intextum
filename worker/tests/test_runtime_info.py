@@ -141,7 +141,7 @@ def test_validate_runtime_dependencies_reports_missing_audio_asr():
     message = str(exc_info.value)
     assert "docling.pipeline.asr_pipeline" in message
     assert "MP3/WAV/M4A" in message
-    assert "setup-macos-mps.sh" in message
+    assert "worker/README.md" in message
 
 
 def test_build_runtime_metadata_omits_secrets_and_includes_runtime_fields(

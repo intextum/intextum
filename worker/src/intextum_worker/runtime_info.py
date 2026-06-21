@@ -169,8 +169,8 @@ def validate_runtime_dependencies(
     raise RuntimeError(
         "Worker environment is missing dependencies for the configured capabilities. "
         f"Missing: {missing_text}. "
-        "On macOS host runtimes, run worker/scripts/setup-macos-mps.sh and start via "
-        "worker/scripts/run-macos-mps.sh. Note: MP3/WAV/M4A files are claimed via the "
+        "Install the matching worker extra as described in worker/README.md. "
+        "Note: MP3/WAV/M4A files are claimed via the "
         "'video' capability because that capability covers media processing."
     )
 

@@ -8,19 +8,21 @@ ENV CLASSIFICATION_DEVICE=cuda
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.12 \
     python3.12-venv \
-    python3-pip \
     libgl1 \
     libglib2.0-0 \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+ENV VIRTUAL_ENV=/opt/worker-venv
 RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/local/bin/pip \
-    && python --version | grep -E '^Python 3\.12\.'
+    && python --version | grep -E '^Python 3\.12\.' \
+    && python -m venv "${VIRTUAL_ENV}"
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 ARG WORKER_REQUIREMENTS=cuda.txt
 COPY requirements ./requirements
-RUN pip install --no-cache-dir -r "requirements/${WORKER_REQUIREMENTS}"
+RUN python -m pip install --no-cache-dir --upgrade pip \
+    && python -m pip install --no-cache-dir -r "requirements/${WORKER_REQUIREMENTS}"
 
 COPY . .
 

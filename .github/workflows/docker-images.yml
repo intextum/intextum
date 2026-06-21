@@ -40,12 +40,14 @@ jobs:
             image: backend
             context: ./backend
             file: ./backend/Dockerfile
+            platforms: linux/amd64
             build_on_pr: true
             build_args: ""
           - name: worker-cpu
             image: worker-cpu
             context: ./worker
             file: ./worker/Dockerfile
+            platforms: linux/amd64
             build_on_pr: true
             build_args: |
               WORKER_REQUIREMENTS=cpu.txt
@@ -53,6 +55,7 @@ jobs:
             image: worker-cuda
             context: ./worker
             file: ./worker/Dockerfile.cuda
+            platforms: linux/amd64
             build_on_pr: false
             build_args: |
               WORKER_REQUIREMENTS=cuda.txt
@@ -97,6 +100,7 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
+          platforms: ${{ matrix.platforms }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

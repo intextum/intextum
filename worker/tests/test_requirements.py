@@ -41,4 +41,4 @@ def test_cpu_profiles_do_not_request_nvidia_packages():
         content = _requirements_text(profile).lower()
 
         assert "nvidia-" not in content
-        assert "cu124" not in content
+        assert "cu12" not in content

@@ -4,20 +4,6 @@
 x-app-version: &app_version "${APP_VERSION:-}"
 
 services:
-  traefik:
-    image: traefik:v3
-    # TODO(prod): add Traefik rate-limit middleware for /api/worker/* and upload endpoints.
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
   postgres:
     image: ankane/pgvector:v0.5.1
     restart: unless-stopped
@@ -84,17 +70,8 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       VALKEY_URL: ${VALKEY_URL:-redis://valkey:6379/0}
       CHAT_RUNNER_ENABLED: ${CHAT_RUNNER_ENABLED:-true}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.routers.api.service=api-direct"
-      - "traefik.http.routers.api.priority=20"
-      - "traefik.http.routers.worker-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api/worker/`)"
-      - "traefik.http.routers.worker-api.entrypoints=web"
-      - "traefik.http.routers.worker-api.service=api-direct"
-      - "traefik.http.routers.worker-api.priority=30"
-      - "traefik.http.services.api-direct.loadbalancer.server.port=8000"
+    ports:
+      - "8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=3)"]
       interval: 10s
@@ -118,13 +95,8 @@ services:
       # No subtitle default: the UI shows the version when this is unset.
       APP_BRAND_SUBTITLE: ${APP_BRAND_SUBTITLE:-}
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`)"
-      - "traefik.http.routers.web.entrypoints=web"
-      - "traefik.http.routers.web.service=web"
-      - "traefik.http.routers.web.priority=1"
-      - "traefik.http.services.web.loadbalancer.server.port=80"
+    ports:
+      - "80:80"
     depends_on:
       - api
 

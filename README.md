@@ -38,7 +38,8 @@ intextum is a local-first knowledge platform for unstructured files. It indexes 
    ```bash
    docker compose up --build
    ```
-5. Open the app at `http://<APP_DOMAIN>`.
+5. Open the app at `http://localhost:5173` (the Vite dev server, which proxies
+   `/api` to the API container).
 
 If you pull an Alembic history squash that resets the migration baseline, recreate
 your local Postgres volume before starting again:
@@ -105,7 +106,7 @@ and enrichment dependencies are installed into `worker/.venv-mps`:
 
 ```bash
 worker/scripts/setup-macos-mps.sh
-worker/scripts/run-macos-mps.sh --api-url=http://127.0.0.1.nip.io/ --capabilities document,video,image,training
+worker/scripts/run-macos-mps.sh --api-url=http://localhost:8000 --capabilities document,video,image,training
 ```
 
 MP3/WAV/M4A tasks are claimed through the `video` capability because the worker

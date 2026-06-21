@@ -36,6 +36,7 @@ document = [
     "easyocr~=1.7.1",
     "rapidocr-onnxruntime~=1.3.14",
     "onnxruntime~=1.17.1",
+    "numpy<2",
 ]
 asr = ["docling[asr]>=2.8.0"]
 enrichment = [
@@ -44,6 +45,7 @@ enrichment = [
     "langgraph>=1.1.8",
     "sentencepiece",
     "protobuf",
+    "numpy<2",
 ]
 full = ["intextum-worker[document,asr,enrichment]"]
 

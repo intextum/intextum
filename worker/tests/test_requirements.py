@@ -1,12 +1,20 @@
 """Tests for worker dependency profile hygiene."""
 
+import tomllib
 from pathlib import Path
 
 REQUIREMENTS_DIR = Path(__file__).parent.parent / "requirements"
+PYPROJECT_PATH = Path(__file__).parent.parent / "pyproject.toml"
 
 
 def _requirements_text(name: str) -> str:
     return (REQUIREMENTS_DIR / name).read_text(encoding="utf-8")
+
+
+def _pyproject_optional_dependencies() -> dict[str, list[str]]:
+    return tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))["project"][
+        "optional-dependencies"
+    ]
 
 
 def test_base_requirements_exclude_test_and_server_only_dependencies():
@@ -42,3 +50,17 @@ def test_cpu_profiles_do_not_request_nvidia_packages():
 
         assert "nvidia-" not in content
         assert "cu12" not in content
+
+
+def test_onnxruntime_profiles_pin_numpy_below_two():
+    for profile in ("document.txt", "content-enrichment.txt"):
+        content = _requirements_text(profile).lower()
+
+        assert "numpy<2" in content
+
+
+def test_onnxruntime_package_extras_pin_numpy_below_two():
+    extras = _pyproject_optional_dependencies()
+
+    for extra in ("document", "enrichment"):
+        assert "numpy<2" in [dependency.lower() for dependency in extras[extra]]

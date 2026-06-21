@@ -1,0 +1,105 @@
+name: Docker images
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/docker-images.yml"
+      - "backend/**"
+      - "worker/**"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - ".github/workflows/docker-images.yml"
+      - "backend/**"
+      - "worker/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-images-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            image: backend
+            context: ./backend
+            file: ./backend/Dockerfile
+            build_on_pr: true
+            build_args: ""
+          - name: worker-cpu
+            image: worker-cpu
+            context: ./worker
+            file: ./worker/Dockerfile
+            build_on_pr: true
+            build_args: |
+              WORKER_REQUIREMENTS=cpu.txt
+          - name: worker-cuda
+            image: worker-cuda
+            context: ./worker
+            file: ./worker/Dockerfile.cuda
+            build_on_pr: false
+            build_args: |
+              WORKER_REQUIREMENTS=cuda.txt
+
+    steps:
+      - name: Skip CUDA image on pull requests
+        if: matrix.build_on_pr == false && github.event_name == 'pull_request'
+        run: echo "Skipping worker-cuda on pull requests to keep CI runtime small."
+
+      - name: Checkout
+        if: matrix.build_on_pr || github.event_name != 'pull_request'
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        if: matrix.build_on_pr || github.event_name != 'pull_request'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        if: matrix.build_on_pr || github.event_name != 'pull_request'
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      - name: Build image
+        if: matrix.build_on_pr || github.event_name != 'pull_request'
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ matrix.build_args }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,scope=${{ matrix.name }},mode=min

@@ -6,3 +6,7 @@ __pycache__
 *.log
 .venv
 venv
+.mypy_cache
+.pytest_cache
+.ruff_cache
+tests

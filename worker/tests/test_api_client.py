@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
+import requests
+
 from intextum_worker.models import (
     WorkerApiStatusResponse,
     WorkerClaimedTask,
@@ -242,6 +244,37 @@ class TestApiClientTaskLifecycle:
         session.post.assert_called_once_with(
             "http://localhost:8000/api/worker/tasks/claim",
             json={"capabilities": ["document", "image"]},
+            timeout=API_TIMEOUT,
+        )
+
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
+    def test_claim_task_retries_once_with_fresh_session_after_connection_drop(
+        self, mock_session_cls, mock_get_settings, mock_settings
+    ):
+        mock_get_settings.return_value = mock_settings
+        first_session = _mock_session()
+        retry_session = _mock_session()
+        response = MagicMock()
+        response.status_code = 204
+        first_session.post.side_effect = requests.exceptions.ConnectionError(
+            "remote disconnected"
+        )
+        retry_session.post.return_value = response
+        mock_session_cls.side_effect = [first_session, retry_session]
+
+        task = ApiClient().claim_task(["document"])
+
+        assert task is None
+        first_session.close.assert_called_once_with()
+        first_session.post.assert_called_once_with(
+            "http://localhost:8000/api/worker/tasks/claim",
+            json={"capabilities": ["document"]},
+            timeout=API_TIMEOUT,
+        )
+        retry_session.post.assert_called_once_with(
+            "http://localhost:8000/api/worker/tasks/claim",
+            json={"capabilities": ["document"]},
             timeout=API_TIMEOUT,
         )
 

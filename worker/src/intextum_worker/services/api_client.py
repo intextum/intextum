@@ -70,9 +70,22 @@ class ApiClient:
         if not settings.WORKER_TOKEN.strip():
             raise ValueError("WORKER_TOKEN must be configured for worker API access")
         self._base_url = settings.API_URL.rstrip("/")
-        self._session = requests.Session()
-        self._session.headers["Authorization"] = f"Bearer {settings.WORKER_TOKEN}"
+        self._worker_token = settings.WORKER_TOKEN
+        self._session = self._new_session()
         self._config_cache: WorkerRuntimeConfig | None = None
+
+    def _new_session(self) -> requests.Session:
+        """Create an authenticated session for backend API requests."""
+        self._session = requests.Session()
+        self._session.headers["Authorization"] = f"Bearer {self._worker_token}"
+        return self._session
+
+    def _reset_session(self) -> None:
+        """Replace the current session after a dropped keep-alive connection."""
+        try:
+            self._session.close()
+        finally:
+            self._session = self._new_session()
 
     def _get_typed(
         self,
@@ -424,11 +437,21 @@ class ApiClient:
     def claim_task(self, capabilities: list[str]) -> WorkerClaimedTask | None:
         """Claim the next available task matching capabilities."""
         payload = WorkerClaimTaskRequest(capabilities=capabilities)
-        resp = self._session.post(
-            build_worker_url(self._base_url, "/api/worker/tasks/claim"),
-            json=model_payload(payload, exclude_none=False),
-            timeout=API_TIMEOUT,
-        )
+        url = build_worker_url(self._base_url, "/api/worker/tasks/claim")
+        request_payload = model_payload(payload, exclude_none=False)
+        try:
+            resp = self._session.post(
+                url,
+                json=request_payload,
+                timeout=API_TIMEOUT,
+            )
+        except requests.exceptions.ConnectionError:
+            self._reset_session()
+            resp = self._session.post(
+                url,
+                json=request_payload,
+                timeout=API_TIMEOUT,
+            )
         return typed_optional_json_response(
             resp,
             WorkerClaimedTask,

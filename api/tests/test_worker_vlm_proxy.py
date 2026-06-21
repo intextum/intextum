@@ -383,6 +383,70 @@ def test_vlm_proxy_sanitizes_payload_and_requires_task_access(test_client):
     assert "content_item_id" not in kwargs["json"]
 
 
+def test_vlm_proxy_accepts_openai_v1_base_url(test_client):
+    from main import app
+
+    settings = MagicMock()
+    settings.PICTURE_DESCRIPTION_URL = "http://vlm-service:8000/v1"
+    ai_settings = EffectiveAiSettings(
+        chat_model="chat-model",
+        chat_system_prompt="System prompt",
+        chat_tool_prompt="Tool prompt",
+        chat_search_limit=8,
+        chat_document_max_chars=30000,
+        picture_description_model="backend-vlm-model",
+        picture_description_prompt="Describe the image accurately.",
+        document_classification_enabled=False,
+        document_classification_labels=[],
+        document_extraction_enabled=False,
+        document_extraction_schemas=[],
+    )
+    upstream_response = MagicMock(
+        status_code=200,
+        content=_openai_like_response("A test description."),
+        headers={"Content-Type": "application/json"},
+    )
+
+    app.dependency_overrides[require_worker_token] = lambda: "worker-1"
+    try:
+        with (
+            patch(
+                "routers.worker.proxy.authorize_claimed_process_task_request",
+                new=AsyncMock(
+                    return_value=MagicMock(
+                        task_secret=_TASK_SECRET,
+                        content_item_id="abc123",
+                        folder_uuid="folder-1",
+                        relative_path="document.pdf",
+                    )
+                ),
+            ),
+            patch("routers.worker.proxy.get_settings", return_value=settings),
+            patch(
+                "routers.worker.proxy.AiSettingsService.get_effective_settings",
+                new=AsyncMock(return_value=ai_settings),
+            ),
+            patch("routers.worker.proxy.httpx.AsyncClient") as mock_client_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.post = AsyncMock(return_value=upstream_response)
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            response = test_client.post(
+                "/api/worker/vlm/chat/completions",
+                json=_valid_payload(),
+                headers=_TASK_SECRET_HEADER,
+            )
+    finally:
+        app.dependency_overrides.pop(require_worker_token, None)
+
+    assert response.status_code == 200
+    mock_client.post.assert_awaited_once()
+    assert mock_client.post.call_args.args[0] == (
+        "http://vlm-service:8000/v1/chat/completions"
+    )
+
+
 def test_vlm_proxy_rejects_mismatched_task_content_item(test_client):
     from main import app
 

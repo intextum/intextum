@@ -1,11 +1,13 @@
 """Tests for worker services."""
 
+import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from intextum_worker.models import CustomConfig, WorkerRuntimeConfig
 from intextum_worker.services.docling import (
     _configure_pipeline_options,
+    _enable_torch_dynamo_eager_fallback_for_mps,
     describe_image_via_vlm,
     get_custom_config,
 )
@@ -166,6 +168,24 @@ class TestDoclingService:
 
         assert options.ocr_options.lang == ["de-DE"]
         mock_warning.assert_called_once()
+
+    def test_enables_torch_dynamo_eager_fallback_for_mps(self):
+        config = SimpleNamespace(suppress_errors=False)
+        torch_dynamo = SimpleNamespace(config=config)
+
+        with patch.dict(sys.modules, {"torch._dynamo": torch_dynamo}):
+            _enable_torch_dynamo_eager_fallback_for_mps("mps")
+
+        assert config.suppress_errors is True
+
+    def test_leaves_torch_dynamo_fallback_disabled_for_cpu(self):
+        config = SimpleNamespace(suppress_errors=False)
+        torch_dynamo = SimpleNamespace(config=config)
+
+        with patch.dict(sys.modules, {"torch._dynamo": torch_dynamo}):
+            _enable_torch_dynamo_eager_fallback_for_mps("cpu")
+
+        assert config.suppress_errors is False
 
 
 class TestAsrLanguageConfig:

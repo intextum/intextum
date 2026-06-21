@@ -200,6 +200,19 @@ def _picture_description_upstream_timeout_seconds(settings: object) -> float:
     return max(1.0, timeout_seconds - VLM_UPSTREAM_TIMEOUT_GRACE_SECONDS)
 
 
+def _picture_description_chat_completions_url(settings: object) -> str:
+    base_url = _settings_string(
+        settings,
+        "PICTURE_DESCRIPTION_URL",
+        "http://localhost:11434",
+    ).rstrip("/")
+    if base_url.endswith("/chat/completions"):
+        return base_url
+    if base_url.endswith("/v1"):
+        return f"{base_url}/chat/completions"
+    return f"{base_url}/v1/chat/completions"
+
+
 def _content_enrichment_stage_timeout_seconds(settings: object) -> float:
     raw_value = getattr(settings, "CONTENT_ENRICHMENT_STAGE_TIMEOUT_SECONDS", 300.0)
     if not isinstance(raw_value, int | float | str):

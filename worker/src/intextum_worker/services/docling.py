@@ -5,6 +5,7 @@ helper modules.
 """
 
 import base64
+import importlib
 import json
 import logging
 from pathlib import Path
@@ -203,6 +204,27 @@ def _build_accelerator_options(
     return AcceleratorOptions(num_threads=settings.DOCLING_THREADS, device=accel_device)
 
 
+def _enable_torch_dynamo_eager_fallback_for_mps(device: str | None) -> None:
+    """Let MPS fall back to eager execution when Torch compiler lowering fails."""
+    if device != "mps":
+        return
+
+    try:
+        torch_dynamo = importlib.import_module("torch._dynamo")
+    except Exception as exc:  # pragma: no cover - depends on optional torch layout
+        logger.debug("Torch Dynamo fallback not available for MPS: %s", exc)
+        return
+
+    config = getattr(torch_dynamo, "config", None)
+    if config is None:
+        logger.debug("Torch Dynamo fallback not available for MPS: missing config")
+        return
+
+    if getattr(config, "suppress_errors", None) is not True:
+        config.suppress_errors = True
+        logger.info("Enabled Torch Dynamo eager fallback for MPS Docling conversion")
+
+
 def _configure_pipeline_options(
     custom_config: CustomConfig,
     *,
@@ -269,6 +291,7 @@ def _configure_pipeline_options(
         timeout=max(1.0, float(config.picture_description_timeout_seconds)),
     )
     pipeline_options.accelerator_options = _build_accelerator_options()
+    _enable_torch_dynamo_eager_fallback_for_mps(settings.CLASSIFICATION_DEVICE)
     return pipeline_options
 
 

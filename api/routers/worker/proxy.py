@@ -64,6 +64,7 @@ from .proxy_helpers import (
     _effective_registry_model_ids,
     _embeddings_by_index,
     _extract_single_image_data_url,
+    _picture_description_chat_completions_url,
     _picture_description_upstream_timeout_seconds,
     _prompt_token_count,
     _resolve_content_enrichment_artifact_file,
@@ -735,13 +736,12 @@ async def vlm_chat_completions(
 
     settings = get_settings()
     ai_settings = await AiSettingsService(db).get_effective_settings()
-    base_url = settings.PICTURE_DESCRIPTION_URL.rstrip("/")
-    if not base_url.startswith(("http://", "https://")):
+    target_url = _picture_description_chat_completions_url(settings)
+    if not target_url.startswith(("http://", "https://")):
         raise HTTPException(
             status_code=500,
             detail="PICTURE_DESCRIPTION_URL must use http:// or https:// scheme",
         )
-    target_url = f"{base_url}/v1/chat/completions"
     payload = _build_vlm_payload(
         model=ai_settings.picture_description_model,
         prompt=ai_settings.picture_description_prompt,

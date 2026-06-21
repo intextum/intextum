@@ -18,7 +18,7 @@ from models import (
     WorkerContentEnrichmentTrainingArtifactUploadResponse,
     WorkerContentEnrichmentTrainingDataset,
 )
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 
 settings = get_settings()
 
@@ -374,7 +374,7 @@ def _load_gliner_training_classes():
 
 
 def execute_content_enrichment_training_task(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask,
     log: logging.LoggerAdapter,
 ) -> str:

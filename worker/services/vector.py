@@ -8,7 +8,7 @@ from typing import Any
 from docling_core.types.doc.document import PictureItem, TableItem
 
 from models import WorkerVectorChunkPayload, WorkerVectorPoint
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ def push_to_vector(
     metadata = kwargs.get("metadata")
     folder_uuid = kwargs.get("folder_uuid")
 
-    client = BackendClient()
+    client = ApiClient()
     logger.info("Generating embeddings for file %s", file_path)
 
     if folder_uuid is None:
@@ -205,7 +205,7 @@ def delete_from_vector(
     exclude_version: str | None = None,
 ) -> None:
     """Delete all points associated with a file path via backend proxy."""
-    client = BackendClient()
+    client = ApiClient()
     logger.info("Deleting points for file %s", file_path)
     client.delete_points(
         file_path,

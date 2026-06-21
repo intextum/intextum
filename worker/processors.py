@@ -25,7 +25,7 @@ from processor_runtime import (
     _processing_flag,
     _run_content_enrichment,
 )
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 from services.docling import (
     describe_image_via_vlm,
     get_custom_config,
@@ -37,7 +37,7 @@ from services.docling_enrichment import (
     inject_standalone_image_as_picture,
 )
 from services.docling_output import save_conversion_results
-from services.tokenizer import BackendEmbeddingTokenizer
+from services.tokenizer import ApiEmbeddingTokenizer
 from services.vector import push_to_vector
 
 settings = get_settings()
@@ -55,7 +55,7 @@ def download_source_file(
     Downloads from backend to WORK_DIR/input/.
     """
     work_input = Path(settings.WORK_DIR) / "input"
-    client = BackendClient()
+    client = ApiClient()
     return client.download_file(
         folder_uuid,
         relative_path,
@@ -103,8 +103,8 @@ def _chunk_docling_document(
     """Build doc chunks via Docling's hybrid chunker and backend token counting."""
     return chunk_docling_document(
         document_dict,
-        backend_client_factory=BackendClient,
-        tokenizer_cls=BackendEmbeddingTokenizer,
+        api_client_factory=ApiClient,
+        tokenizer_cls=ApiEmbeddingTokenizer,
         task_id=task_id,
         task_secret=task_secret,
     )
@@ -206,7 +206,7 @@ def process_document(
     if aborted is not None:
         return aborted
 
-    runtime_config = BackendClient().get_config()
+    runtime_config = ApiClient().get_config()
     job_ctx.set_stage(ProcessingStage.CONVERTING)
     log.info("Starting Docling conversion")
     conv_result = run_docling_conversion(

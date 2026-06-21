@@ -13,7 +13,7 @@ import requests
 
 from models import WorkerClaimedTask
 from processors import ProcessingResult
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def start_task_heartbeat(
     interval_seconds: float,
     *,
     progress: TaskProgress | None = None,
-    backend_client_factory: Callable[[], BackendClient] = BackendClient,
+    api_client_factory: Callable[[], ApiClient] = ApiClient,
     heartbeat_logger: logging.Logger = logger,
 ) -> tuple[threading.Event, threading.Thread] | None:
     """Start a background heartbeat loop for a claimed task."""
@@ -98,7 +98,7 @@ def start_task_heartbeat(
 
     def _heartbeat_loop() -> None:
         try:
-            client = backend_client_factory()
+            client = api_client_factory()
         except Exception as exc:  # pylint: disable=broad-exception-caught
             heartbeat_logger.warning(
                 "Failed to start task heartbeat for %s: %s", task_id, exc
@@ -147,7 +147,7 @@ class HttpJobContext:
     task_id: str
     task_secret: str
     correlation_id: str
-    _client: BackendClient
+    _client: ApiClient
     progress: TaskProgress | None = None
 
     def set_stage(self, stage: str) -> None:
@@ -207,7 +207,7 @@ def log_result(log: logging.LoggerAdapter, result: ProcessingResult) -> None:
 
 
 def report_aborted_result(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask,
     result: ProcessingResult,
 ) -> None:
@@ -229,7 +229,7 @@ def report_aborted_result(
 
 
 def upload_extracted_output(
-    client: BackendClient,
+    client: ApiClient,
     *,
     content_item_id: str | None,
     output_dir,
@@ -259,7 +259,7 @@ def upload_extracted_output(
 
 
 def report_completed_result(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask,
     result: ProcessingResult,
 ) -> None:
@@ -280,7 +280,7 @@ def report_completed_result(
 
 
 def report_processing_failure(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask,
     exc: Exception,
     log: logging.LoggerAdapter,

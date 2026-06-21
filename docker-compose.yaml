@@ -57,7 +57,7 @@ services:
     env_file: .env
     environment:
       APP_VERSION: *app_version
-      BACKEND_URL: http://backend:8000
+      API_URL: http://api:8000
       WORKER_TOKEN: ${WORKER_TOKEN:-}
       WORK_DIR: /tmp/worker
       CAPABILITIES: ${WORKER_CAPABILITIES:-document,video,image}
@@ -65,10 +65,10 @@ services:
       # easyocr | rapidocr | tesseract | tesseract_cli | ocrmac
       DOCLING_OCR_ENGINE: ${WORKER_DOCLING_OCR_ENGINE:-easyocr}
     depends_on:
-      - backend
+      - api
 
-  backend:
-    build: ./backend
+  api:
+    build: ./api
     restart: unless-stopped
     volumes:
       - ./VERSION:/VERSION:ro
@@ -86,15 +86,15 @@ services:
       CHAT_RUNNER_ENABLED: ${CHAT_RUNNER_ENABLED:-true}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.backend-api.entrypoints=web"
-      - "traefik.http.routers.backend-api.service=backend-direct"
-      - "traefik.http.routers.backend-api.priority=20"
+      - "traefik.http.routers.api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.service=api-direct"
+      - "traefik.http.routers.api.priority=20"
       - "traefik.http.routers.worker-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`) && PathPrefix(`/api/worker/`)"
       - "traefik.http.routers.worker-api.entrypoints=web"
-      - "traefik.http.routers.worker-api.service=backend-direct"
+      - "traefik.http.routers.worker-api.service=api-direct"
       - "traefik.http.routers.worker-api.priority=30"
-      - "traefik.http.services.backend-direct.loadbalancer.server.port=8000"
+      - "traefik.http.services.api-direct.loadbalancer.server.port=8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=3)"]
       interval: 10s
@@ -107,9 +107,9 @@ services:
       valkey:
         condition: service_healthy
 
-  frontend:
+  web:
     build:
-      context: ./frontend
+      context: ./web
     volumes:
       - ./VERSION:/VERSION:ro
     environment:
@@ -120,13 +120,13 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.routers.frontend.service=frontend"
-      - "traefik.http.routers.frontend.priority=1"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.web.rule=Host(`${APP_DOMAIN:?APP_DOMAIN must be set}`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.routers.web.service=web"
+      - "traefik.http.routers.web.priority=1"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
     depends_on:
-      - backend
+      - api
 
 volumes:
   postgres_data:

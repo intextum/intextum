@@ -105,7 +105,7 @@ class TestModels:
 
 
 class TestPathHelpers:
-    @patch("processors.BackendClient")
+    @patch("processors.ApiClient")
     def test_download_source_file_downloads_from_backend(self, mock_client_cls):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -130,7 +130,7 @@ class TestPathHelpers:
         assert result.local_path == Path("/tmp/worker/input/test.pdf")
         assert result.relative_path == "documents/test.pdf"
 
-    @patch("processors.BackendClient")
+    @patch("processors.ApiClient")
     def test_download_source_file_scopes_downloads_by_file_id(self, mock_client_cls):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -261,8 +261,8 @@ class TestDocumentProcessor:
 
     @patch("processors.push_to_vector")
     @patch("processors._run_content_enrichment")
-    @patch("processors.BackendEmbeddingTokenizer")
-    @patch("processors.BackendClient")
+    @patch("processors.ApiEmbeddingTokenizer")
+    @patch("processors.ApiClient")
     @patch("processors.extract_picture_enrichments")
     @patch("processors.save_conversion_results")
     @patch("processors.run_docling_conversion")
@@ -347,8 +347,8 @@ class TestDocumentProcessor:
 
     @patch("processors.push_to_vector")
     @patch("processors._run_content_enrichment")
-    @patch("processors.BackendEmbeddingTokenizer")
-    @patch("processors.BackendClient")
+    @patch("processors.ApiEmbeddingTokenizer")
+    @patch("processors.ApiClient")
     @patch("processors.extract_picture_enrichments")
     @patch("processors.save_conversion_results")
     @patch("processors.run_docling_conversion")
@@ -431,8 +431,8 @@ class TestAudioProcessor:
         mock_asr.assert_not_called()
 
     @patch("processors.push_to_vector")
-    @patch("processors.BackendEmbeddingTokenizer")
-    @patch("processors.BackendClient")
+    @patch("processors.ApiEmbeddingTokenizer")
+    @patch("processors.ApiClient")
     @patch("processors.save_conversion_results")
     @patch("processors.run_asr_conversion")
     @patch("pathlib.Path.mkdir")
@@ -506,8 +506,8 @@ class TestAudioProcessor:
         )
 
     @patch("processors.push_to_vector")
-    @patch("processors.BackendEmbeddingTokenizer")
-    @patch("processors.BackendClient")
+    @patch("processors.ApiEmbeddingTokenizer")
+    @patch("processors.ApiClient")
     @patch("processors.save_conversion_results")
     @patch("processors.run_asr_conversion")
     @patch("pathlib.Path.mkdir")

@@ -18,4 +18,4 @@ COPY --chown=app:app . .
 
 USER app
 
-CMD ["sh", "./scripts/start-backend.sh", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "./scripts/start-api.sh", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

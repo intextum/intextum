@@ -70,7 +70,7 @@ from processors import (
     process_document,
     process_video_metadata,
 )
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 from services.content_enrichment_training_runner import (
     execute_content_enrichment_training_task,
 )
@@ -177,7 +177,7 @@ def _is_enrichment_only_task(task: WorkerClaimedTask) -> bool:
 
 
 def _handle_enrichment_only_processing(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask,
     log: logging.LoggerAdapter,
 ) -> None:
@@ -191,7 +191,7 @@ def _handle_enrichment_only_processing(
 
 
 def _handle_processing(
-    client: BackendClient,
+    client: ApiClient,
     task_run: WorkerTaskRun,
     log: logging.LoggerAdapter,
     correlation_id: str,
@@ -259,7 +259,7 @@ def _processor_spec_for_suffix(suffix: str):
 
 
 def _handle_training_task(
-    client: BackendClient,
+    client: ApiClient,
     claimed_task: WorkerClaimedTask,
     log: logging.LoggerAdapter,
 ) -> None:
@@ -267,7 +267,7 @@ def _handle_training_task(
 
 
 def _handle_downloaded_processing_task(
-    client: BackendClient,
+    client: ApiClient,
     claimed_task: WorkerClaimedTask,
     log: logging.LoggerAdapter,
     correlation_id: str,
@@ -305,7 +305,7 @@ def _task_handler_for(
 
 
 def _process_task(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask | dict[str, Any],
 ) -> None:
     """Process a single claimed task."""
@@ -349,7 +349,7 @@ def _process_task(
 
 def run_poll_loop(capabilities: list[str], poll_interval: float = 5.0) -> None:
     """Main poll loop: claim → process → report → repeat."""
-    client = BackendClient()
+    client = ApiClient()
     claim_failures = 0
     fatal_claim_failures = 0
 
@@ -363,7 +363,7 @@ def run_poll_loop(capabilities: list[str], poll_interval: float = 5.0) -> None:
             )
             try:
                 # We use a fresh client/session to ensure the request goes through during shutdown
-                shutdown_client = BackendClient()
+                shutdown_client = ApiClient()
                 shutdown_client.fail_task(
                     ACTIVE_TASK.task_id,
                     ACTIVE_TASK.task_secret,

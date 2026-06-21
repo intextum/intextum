@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Remote backend connection
-    BACKEND_URL: str = "http://backend:8000"
+    API_URL: str = "http://api:8000"
     WORKER_TOKEN: str = ""
     WORK_DIR: str = "/tmp/worker"
 

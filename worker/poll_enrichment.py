@@ -8,7 +8,7 @@ from typing import Any
 
 from models import WorkerClaimedTask
 from processors import SimpleChunk
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 
 
 def is_enrichment_only_task(task: WorkerClaimedTask) -> bool:
@@ -21,7 +21,7 @@ def is_enrichment_only_task(task: WorkerClaimedTask) -> bool:
 
 
 def handle_enrichment_only_processing(
-    client: BackendClient,
+    client: ApiClient,
     task: WorkerClaimedTask,
     log: logging.LoggerAdapter,
     *,

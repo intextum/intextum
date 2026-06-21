@@ -132,7 +132,7 @@ def _build_openai_client(config: DocumentExtractionProviderConfig):
 
     settings = get_settings()
     base_url = (
-        f"{settings.BACKEND_URL.rstrip('/')}"
+        f"{settings.API_URL.rstrip('/')}"
         f"/api/worker/tasks/{config.task_id}/document-extraction-llm"
     )
     return openai.OpenAI(

@@ -10,35 +10,35 @@ services:
     ports:
       - "6379:6379"
 
-  backend:
+  api:
     build:
-      context: ./backend
+      context: ./api
       dockerfile: Dockerfile.dev
     volumes:
-      - ./backend:/app
+      - ./api:/app
       - ./data:/data
       - ./data_bob:/data_bob
       - ./data_alice:/data_alice
       - ./extracted:/extracted
       - ./model-artifacts:/model-artifacts
       - ./config.yaml:/config/config.yaml:ro
-      - backend_data:/app/data
+      - api_data:/app/data
     environment:
       CONFIG_FILE: /config/config.yaml
       LOG_JSON_FORMAT: "false"
       LOG_LEVEL: DEBUG
       OPENAI_API_KEY: none
 
-  frontend:
+  web:
     build:
-      context: ./frontend
+      context: ./web
       dockerfile: Dockerfile.dev
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     volumes:
-      - ./frontend:/app
+      - ./web:/app
       - /app/node_modules
     environment:
-      VITE_API_URL: http://backend:8000
+      VITE_API_URL: http://api:8000
       APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN must be set}
       APP_BRAND_TITLE: ${APP_BRAND_TITLE:-Intextum}
       # No subtitle default: the UI shows the version when this is unset.
@@ -46,7 +46,7 @@ services:
       VITE_APP_BRAND_TITLE: ${APP_BRAND_TITLE:-Intextum}
       VITE_APP_BRAND_SUBTITLE: ${APP_BRAND_SUBTITLE:-}
     labels:
-      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.services.web.loadbalancer.server.port=5173"
 
 volumes:
-  backend_data:
+  api_data:

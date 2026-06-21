@@ -9,7 +9,7 @@ from pathlib import Path
 import requests
 
 from models import WorkerUploadBatchResponse, WorkerUploadDirectoryResult
-from services.backend_client_api import build_worker_url, typed_json_response
+from services.api_client_api import build_worker_url, typed_json_response
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 os.environ.setdefault("WORKER_TOKEN", "test-token")
-os.environ.setdefault("BACKEND_URL", "http://backend:8000")
+os.environ.setdefault("API_URL", "http://api:8000")
 
 
 def mock_module(name):
@@ -56,7 +56,7 @@ sys.path.insert(0, str(worker_dir))
 def mock_settings():
     """Mock settings with test values."""
     settings = MagicMock()
-    settings.BACKEND_URL = "http://localhost:8000"
+    settings.API_URL = "http://localhost:8000"
     settings.WORKER_TOKEN = "test-token"
     settings.WORK_DIR = "/tmp/worker"
     settings.CAPABILITIES = "document,video,image"

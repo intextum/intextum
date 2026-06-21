@@ -84,7 +84,7 @@ def maybe_describe_standalone_image(
 def chunk_docling_document(
     document_dict: dict,
     *,
-    backend_client_factory: Callable[[], Any],
+    api_client_factory: Callable[[], Any],
     tokenizer_cls: Callable[..., Any],
     task_id: str,
     task_secret: str,
@@ -95,7 +95,7 @@ def chunk_docling_document(
     from docling.datamodel.document import DoclingDocument
 
     doc = DoclingDocument.model_validate(document_dict)
-    client = backend_client_factory()
+    client = api_client_factory()
     config = client.get_config()
     max_tokens = config.embedding_max_tokens
     if max_tokens <= 0:

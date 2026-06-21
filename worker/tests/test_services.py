@@ -35,7 +35,7 @@ class TestDoclingService:
         )
         with (
             patch("services.docling.settings", mock_settings),
-            patch("services.docling.BackendClient", return_value=mock_client),
+            patch("services.docling.ApiClient", return_value=mock_client),
             patch("services.docling.PictureDescriptionApiOptions") as mock_pic_opts,
         ):
             options = _configure_pipeline_options(
@@ -90,7 +90,7 @@ class TestDoclingService:
 
         with (
             patch("services.docling.settings", mock_settings),
-            patch("services.docling.BackendClient", return_value=mock_client),
+            patch("services.docling.ApiClient", return_value=mock_client),
             patch("services.docling.PictureDescriptionApiOptions"),
         ):
             options = _configure_pipeline_options(
@@ -118,7 +118,7 @@ class TestDoclingService:
 
         with (
             patch("services.docling.settings", mock_settings),
-            patch("services.docling.BackendClient", return_value=mock_client),
+            patch("services.docling.ApiClient", return_value=mock_client),
         ):
             options = _configure_pipeline_options(
                 config,
@@ -145,7 +145,7 @@ class TestDoclingService:
 
         with (
             patch("services.docling.settings", mock_settings),
-            patch("services.docling.BackendClient", return_value=mock_client),
+            patch("services.docling.ApiClient", return_value=mock_client),
         ):
             options = _configure_pipeline_options(
                 config,
@@ -411,12 +411,12 @@ class TestExtractPictureEnrichments:
 
 class TestDescribeImageViaVlm:
     @patch("services.docling.requests.post")
-    @patch("services.docling.BackendClient")
+    @patch("services.docling.ApiClient")
     @patch("services.docling.settings")
     def test_successful_vlm_call(
-        self, mock_settings, mock_backend_cls, mock_post, tmp_path
+        self, mock_settings, mock_api_cls, mock_post, tmp_path
     ):
-        mock_settings.BACKEND_URL = "http://localhost:8000"
+        mock_settings.API_URL = "http://localhost:8000"
         mock_settings.WORKER_TOKEN = "test-token"
 
         mock_client = MagicMock()
@@ -426,7 +426,7 @@ class TestDescribeImageViaVlm:
             picture_description_model="gpt-4o",
             picture_description_prompt="Describe this image.",
         )
-        mock_backend_cls.return_value = mock_client
+        mock_api_cls.return_value = mock_client
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -457,10 +457,10 @@ class TestDescribeImageViaVlm:
         assert call_kwargs.args[0].endswith("/api/worker/vlm/chat/completions")
 
     @patch("services.docling.requests.post")
-    @patch("services.docling.BackendClient")
+    @patch("services.docling.ApiClient")
     @patch("services.docling.settings")
-    def test_png_mime_type(self, mock_settings, mock_backend_cls, mock_post, tmp_path):
-        mock_settings.BACKEND_URL = "http://localhost:8000"
+    def test_png_mime_type(self, mock_settings, mock_api_cls, mock_post, tmp_path):
+        mock_settings.API_URL = "http://localhost:8000"
         mock_settings.WORKER_TOKEN = "test-token"
 
         mock_client = MagicMock()
@@ -470,7 +470,7 @@ class TestDescribeImageViaVlm:
             picture_description_model="model",
             picture_description_prompt="Describe.",
         )
-        mock_backend_cls.return_value = mock_client
+        mock_api_cls.return_value = mock_client
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -524,7 +524,7 @@ class TestIncrementPictureRefs:
 
 
 class TestVectorService:
-    @patch("services.vector.BackendClient")
+    @patch("services.vector.ApiClient")
     def test_push_to_vector_uses_file_id_for_point_namespace(self, mock_client_cls):
         mock_client = MagicMock()
         mock_client.get_embeddings.return_value = [[0.1, 0.2]]
@@ -557,7 +557,7 @@ class TestVectorService:
         assert first_points[0].id != second_points[0].id
 
     @patch("services.vector._build_image_uri_map")
-    @patch("services.vector.BackendClient")
+    @patch("services.vector.ApiClient")
     def test_push_to_vector_includes_structured_chunk_fields(
         self, mock_client_cls, mock_image_uri_map
     ):
@@ -601,7 +601,7 @@ class TestVectorService:
         }
         assert mock_client.delete_points.call_args.kwargs["content_item_id"] == "file-a"
 
-    @patch("services.vector.BackendClient")
+    @patch("services.vector.ApiClient")
     def test_push_to_vector_passes_metadata_for_client_side_merge(
         self, mock_client_cls
     ):

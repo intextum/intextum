@@ -43,7 +43,7 @@ from models import (
     WorkerVectorUpsertRequest,
     WorkerVectorUpsertResponse,
 )
-from services.backend_client_api import (
+from services.api_client_api import (
     build_worker_url,
     encode_relative_path,
     model_payload,
@@ -53,7 +53,7 @@ from services.backend_client_api import (
     typed_optional_json_response,
     write_download_stream,
 )
-from services.backend_client_uploads import upload_extracted_directory
+from services.api_client_uploads import upload_extracted_directory
 
 logger = logging.getLogger(__name__)
 
@@ -62,14 +62,14 @@ UPLOAD_TIMEOUT = (10, 120)
 API_TIMEOUT = (10, 60)
 
 
-class BackendClient:
+class ApiClient:
     """Authenticated HTTP client for the backend worker API."""
 
     def __init__(self):
         settings = get_settings()
         if not settings.WORKER_TOKEN.strip():
             raise ValueError("WORKER_TOKEN must be configured for worker API access")
-        self._base_url = settings.BACKEND_URL.rstrip("/")
+        self._base_url = settings.API_URL.rstrip("/")
         self._session = requests.Session()
         self._session.headers["Authorization"] = f"Bearer {settings.WORKER_TOKEN}"
         self._config_cache: WorkerRuntimeConfig | None = None

@@ -59,8 +59,8 @@ backend runtime connections use the non-owner role.
 
 ## Repository layout
 
-- `frontend/` user interface
-- `backend/` API, indexing, search, auth integration
+- `web/` user interface
+- `api/` API, indexing, search, auth integration
 - `worker/` async processing workers
 - `data/` sample/attached data volumes
 - `config.example.yaml` local configuration template
@@ -72,7 +72,7 @@ run the worker directly on the host so Torch can use Apple MPS:
 
 ```bash
 worker/scripts/setup-macos-mps.sh
-WORKER_TOKEN=... BACKEND_URL=http://localhost:8000 worker/scripts/run-macos-mps.sh
+WORKER_TOKEN=... API_URL=http://localhost:8000 worker/scripts/run-macos-mps.sh
 ```
 
 The host helper defaults to `CLASSIFICATION_DEVICE=mps`,
@@ -105,7 +105,7 @@ and enrichment dependencies are installed into `worker/.venv-mps`:
 
 ```bash
 worker/scripts/setup-macos-mps.sh
-worker/scripts/run-macos-mps.sh --backend-url=http://127.0.0.1.nip.io/ --capabilities document,video,image,training
+worker/scripts/run-macos-mps.sh --api-url=http://127.0.0.1.nip.io/ --capabilities document,video,image,training
 ```
 
 MP3/WAV/M4A tasks are claimed through the `video` capability because the worker

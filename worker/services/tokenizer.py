@@ -3,15 +3,15 @@
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from pydantic import ConfigDict, PrivateAttr
 
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 
 
-class BackendEmbeddingTokenizer(BaseTokenizer):
+class ApiEmbeddingTokenizer(BaseTokenizer):
     """Tokenizer wrapper that delegates token counting to backend embedding API."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    client: BackendClient
+    client: ApiClient
     task_id: str
     task_secret: str
     max_tokens: int = 8192
@@ -42,4 +42,4 @@ class BackendEmbeddingTokenizer(BaseTokenizer):
 
     def get_tokenizer(self) -> str:
         """Return symbolic tokenizer identifier."""
-        return "backend-embedding-tokenizer"
+        return "api-embedding-tokenizer"

@@ -16,7 +16,7 @@ pytestmark = pytest.mark.integration
 
 
 # Tables that are intentionally protected by RLS. Keep in sync with
-# backend/sql/rls/020_policies.sql.
+# api/sql/rls/020_policies.sql.
 RLS_TABLES = sorted(
     [
         "workers",

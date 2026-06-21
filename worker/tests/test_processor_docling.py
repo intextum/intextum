@@ -111,7 +111,7 @@ def test_chunk_docling_document_uses_backend_config_and_tokenizer():
 
         doc, chunks, embedding_model_name = chunk_docling_document(
             {"pages": {}},
-            backend_client_factory=lambda: client,
+            api_client_factory=lambda: client,
             tokenizer_cls=tokenizer_cls,
             task_id="task-1",
             task_secret="secret-1",
@@ -171,7 +171,7 @@ def test_chunk_docling_document_preserves_document_shape_before_validation():
 
         chunk_docling_document(
             document_dict,
-            backend_client_factory=lambda: client,
+            api_client_factory=lambda: client,
             tokenizer_cls=tokenizer_cls,
             task_id="task-1",
             task_secret="secret-1",
@@ -208,7 +208,7 @@ def test_chunk_docling_document_requires_positive_embedding_limit():
     ):
         chunk_docling_document(
             {"pages": {}},
-            backend_client_factory=lambda: client,
+            api_client_factory=lambda: client,
             tokenizer_cls=MagicMock(),
             task_id="task-1",
             task_secret="secret-1",

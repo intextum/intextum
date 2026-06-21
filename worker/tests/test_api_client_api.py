@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from models import WorkerApiStatusResponse, WorkerClaimedTask
-from services.backend_client_api import (
+from services.api_client_api import (
     build_worker_url,
     raise_for_status_with_detail,
     resolve_download_target,

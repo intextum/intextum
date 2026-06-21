@@ -11,7 +11,7 @@ from models import (
     WorkerDocumentExtractionField,
     WorkerDocumentExtractionSchema,
 )
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 from services.content_enrichment_utils import (
     MAX_SELECTED_EXTRACTION_CHUNKS,
     _numeric_confidence,
@@ -250,7 +250,7 @@ def _select_extraction_chunks(
     fallback_reason: str | None = None
     if task_id and task_secret:
         try:
-            response = BackendClient().search_content_enrichment_chunks(
+            response = ApiClient().search_content_enrichment_chunks(
                 task_id,
                 task_secret,
                 queries=queries,

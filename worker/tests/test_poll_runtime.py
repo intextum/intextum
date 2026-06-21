@@ -246,7 +246,7 @@ def test_start_task_heartbeat_forwards_current_stage():
         "secret-1",
         0.01,
         progress=progress,
-        backend_client_factory=lambda: client,
+        api_client_factory=lambda: client,
     )
     try:
         # Allow at least one heartbeat tick to fire.

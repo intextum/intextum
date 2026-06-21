@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - ".github/workflows/docker-images.yml"
-      - "backend/**"
-      - "frontend/**"
+      - "api/**"
+      - "web/**"
       - "worker/**"
   push:
     branches:
@@ -14,8 +14,8 @@ on:
       - "v*"
     paths:
       - ".github/workflows/docker-images.yml"
-      - "backend/**"
-      - "frontend/**"
+      - "api/**"
+      - "web/**"
       - "worker/**"
   workflow_dispatch:
 
@@ -38,17 +38,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: backend
-            image: backend
-            context: ./backend
-            file: ./backend/Dockerfile
+          - name: api
+            image: api
+            context: ./api
+            file: ./api/Dockerfile
             platforms: linux/amd64,linux/arm64
             build_on_pr: true
             build_args: ""
-          - name: frontend
-            image: frontend
-            context: ./frontend
-            file: ./frontend/Dockerfile
+          - name: web
+            image: web
+            context: ./web
+            file: ./web/Dockerfile
             platforms: linux/amd64,linux/arm64
             build_on_pr: true
             build_args: ""

@@ -38,7 +38,7 @@ from docling.document_converter import (
 
 from config import get_settings
 from models import CustomConfig
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 from services.docling_asr import (
     run_asr_conversion as run_docling_asr_conversion,
 )
@@ -251,10 +251,10 @@ def _configure_pipeline_options(
     pipeline_options.do_picture_description = True
     pipeline_options.enable_remote_services = True
 
-    client = BackendClient()
+    client = ApiClient()
     config = client.get_config()
     pipeline_options.picture_description_options = PictureDescriptionApiOptions(
-        url=f"{settings.BACKEND_URL.rstrip('/')}/api/worker/vlm/chat/completions",
+        url=f"{settings.API_URL.rstrip('/')}/api/worker/vlm/chat/completions",
         headers={
             "Authorization": f"Bearer {settings.WORKER_TOKEN}",
             "X-Task-Id": task_id,
@@ -330,7 +330,7 @@ def describe_image_via_vlm(
     image_path: Path, *, task_id: str, task_secret: str, content_item_id: str
 ) -> str | None:
     """Call the VLM to describe a standalone image Docling did not classify."""
-    client = BackendClient()
+    client = ApiClient()
     config = client.get_config()
 
     image_bytes = image_path.read_bytes()
@@ -355,7 +355,7 @@ def describe_image_via_vlm(
         ],
     }
 
-    url = f"{settings.BACKEND_URL.rstrip('/')}/api/worker/vlm/chat/completions"
+    url = f"{settings.API_URL.rstrip('/')}/api/worker/vlm/chat/completions"
     headers = {
         "Authorization": f"Bearer {settings.WORKER_TOKEN}",
         "X-Task-Id": task_id,

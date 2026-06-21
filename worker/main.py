@@ -31,10 +31,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Seconds between poll attempts (default: 5)",
     )
     parser.add_argument(
-        "--backend-url",
+        "--api-url",
         type=str,
         default=None,
-        help="Backend URL override (otherwise BACKEND_URL or APP_SCHEME/APP_DOMAIN)",
+        help="API URL override (otherwise API_URL or APP_SCHEME/APP_DOMAIN)",
     )
     parser.add_argument(
         "--work-dir",
@@ -62,19 +62,19 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _resolve_backend_url(cli_backend_url: str | None) -> None:
-    """Resolve BACKEND_URL from CLI/env/domain and export it for Settings."""
-    if cli_backend_url:
-        os.environ["BACKEND_URL"] = cli_backend_url
+def _resolve_api_url(cli_api_url: str | None) -> None:
+    """Resolve API_URL from CLI/env/domain and export it for Settings."""
+    if cli_api_url:
+        os.environ["API_URL"] = cli_api_url
         return
 
-    if os.environ.get("BACKEND_URL", "").strip():
+    if os.environ.get("API_URL", "").strip():
         return
 
     app_domain = os.environ.get("APP_DOMAIN", "").strip()
     if app_domain:
         app_scheme = os.environ.get("APP_SCHEME", "http").strip() or "http"
-        os.environ["BACKEND_URL"] = f"{app_scheme}://{app_domain}"
+        os.environ["API_URL"] = f"{app_scheme}://{app_domain}"
 
 
 def _resolve_work_dir(cli_work_dir: str | None) -> None:
@@ -124,9 +124,9 @@ def _report_runtime_metadata(settings, capabilities: list[str], logger) -> None:
     )
     try:
         # pylint: disable=import-outside-toplevel
-        from services.backend_client import BackendClient
+        from services.api_client import ApiClient
 
-        BackendClient().report_runtime_metadata(metadata)
+        ApiClient().report_runtime_metadata(metadata)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.warning("Failed to report worker runtime metadata: %s", exc)
 
@@ -136,7 +136,7 @@ def main():
     parser = _build_parser()
     args = parser.parse_args()
 
-    _resolve_backend_url(args.backend_url)
+    _resolve_api_url(args.api_url)
     _resolve_work_dir(args.work_dir)
     _resolve_classification_device(args.classification_device)
     _resolve_docling_ocr_engine(args.docling_ocr_engine)
@@ -185,7 +185,7 @@ def main():
     logger.info(
         "Starting intextum worker",
         extra={
-            "backend_url": settings.BACKEND_URL,
+            "api_url": settings.API_URL,
             "work_dir": settings.WORK_DIR,
             "classification_device": settings.CLASSIFICATION_DEVICE,
             "docling_ocr_engine": settings.DOCLING_OCR_ENGINE,

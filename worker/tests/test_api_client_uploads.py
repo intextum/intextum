@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from services.backend_client_uploads import upload_extracted_directory
+from services.api_client_uploads import upload_extracted_directory
 
 
 def test_upload_extracted_directory_batches_and_aggregates(tmp_path):

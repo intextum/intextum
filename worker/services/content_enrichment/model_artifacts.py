@@ -8,7 +8,7 @@ import tarfile
 from pathlib import Path
 
 from config import get_settings
-from services.backend_client import BackendClient
+from services.api_client import ApiClient
 
 _REGISTRY_MODEL_PREFIX = "registry:"
 _EXTRACTOR_CACHE_MAX_SIZE = 4
@@ -94,7 +94,7 @@ def _ensure_local_registry_model(
     if not task_id or not task_secret:
         raise RuntimeError("Task identity is required to download registry models")
 
-    client = BackendClient()
+    client = ApiClient()
     model = client.get_content_enrichment_registry_model(
         model_id,
         task_id=task_id,

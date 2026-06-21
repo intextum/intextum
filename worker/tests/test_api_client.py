@@ -22,7 +22,7 @@ from models import (
     WorkerVectorPoint,
     WorkerVectorUpsertResponse,
 )
-from services.backend_client import API_TIMEOUT, BackendClient
+from services.api_client import API_TIMEOUT, ApiClient
 
 
 def _mock_session() -> MagicMock:
@@ -32,9 +32,9 @@ def _mock_session() -> MagicMock:
     return session
 
 
-class TestBackendClientConfig:
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+class TestApiClientConfig:
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_config_returns_typed_runtime_config_and_caches_per_instance(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -77,7 +77,7 @@ class TestBackendClientConfig:
         session.get.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         first = client.get_config()
         second = client.get_config()
 
@@ -98,8 +98,8 @@ class TestBackendClientConfig:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_config_force_refresh_reloads_runtime_config(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -118,7 +118,7 @@ class TestBackendClientConfig:
         session.get.side_effect = [first_response, second_response]
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         first = client.get_config()
         second = client.get_config(force_refresh=True)
 
@@ -126,8 +126,8 @@ class TestBackendClientConfig:
         assert second.embedding_model == "model-b"
         assert session.get.call_count == 2
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_config_cache_is_not_shared_between_instances(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -155,8 +155,8 @@ class TestBackendClientConfig:
 
         mock_session_cls.side_effect = [session_a, session_b]
 
-        client_a = BackendClient()
-        client_b = BackendClient()
+        client_a = ApiClient()
+        client_b = ApiClient()
 
         config_a_first = client_a.get_config()
         config_a_second = client_a.get_config()
@@ -170,8 +170,8 @@ class TestBackendClientConfig:
         assert session_a.get.call_count == 1
         assert session_b.get.call_count == 1
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_report_runtime_metadata_posts_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -200,7 +200,7 @@ class TestBackendClientConfig:
             executable="/path/to/python",
         )
 
-        result = BackendClient().report_runtime_metadata(metadata)
+        result = ApiClient().report_runtime_metadata(metadata)
 
         assert isinstance(result, WorkerApiStatusResponse)
         session.post.assert_called_once_with(
@@ -210,9 +210,9 @@ class TestBackendClientConfig:
         )
 
 
-class TestBackendClientTaskLifecycle:
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+class TestApiClientTaskLifecycle:
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_claim_task_serializes_capabilities_and_parses_task(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -234,7 +234,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         task = client.claim_task(["document", "image"])
 
         assert isinstance(task, WorkerClaimedTask)
@@ -245,8 +245,8 @@ class TestBackendClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_content_enrichment_training_dataset_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -287,7 +287,7 @@ class TestBackendClientTaskLifecycle:
         session.get.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         dataset = client.get_content_enrichment_training_dataset("task-1", "secret-1")
 
         assert isinstance(dataset, WorkerContentEnrichmentTrainingDataset)
@@ -299,8 +299,8 @@ class TestBackendClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_content_enrichment_registry_model_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -318,7 +318,7 @@ class TestBackendClientTaskLifecycle:
         session.get.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         model = client.get_content_enrichment_registry_model(
             "model-1", "task-1", "secret-1"
         )
@@ -331,8 +331,8 @@ class TestBackendClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_content_enrichment_task_source_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -357,7 +357,7 @@ class TestBackendClientTaskLifecycle:
         session.get.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         source = client.get_content_enrichment_task_source("task-1", "secret-1")
 
         assert isinstance(source, WorkerContentEnrichmentTaskSource)
@@ -369,8 +369,8 @@ class TestBackendClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_search_content_enrichment_chunks_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -393,7 +393,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.search_content_enrichment_chunks(
             "task-1",
             "secret-1",
@@ -421,8 +421,8 @@ class TestBackendClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_download_content_enrichment_model_artifact_writes_local_file(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -434,7 +434,7 @@ class TestBackendClientTaskLifecycle:
         mock_session_cls.return_value = session
 
         target = tmp_path / "model-1" / "adapter.tar.gz"
-        client = BackendClient()
+        client = ApiClient()
         local_file = client.download_content_enrichment_model_artifact(
             "model-1", target, "task-1", "secret-1"
         )
@@ -448,8 +448,8 @@ class TestBackendClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_complete_task_returns_status_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -460,7 +460,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.complete_task(
             "task-1",
             "secret-1",
@@ -475,8 +475,8 @@ class TestBackendClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_complete_content_enrichment_training_task_returns_status_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -487,7 +487,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.complete_content_enrichment_training_task(
             "task-1",
             "secret-1",
@@ -507,8 +507,8 @@ class TestBackendClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_upload_content_enrichment_training_artifact_returns_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -527,7 +527,7 @@ class TestBackendClientTaskLifecycle:
         local_file = tmp_path / "adapter.tar.gz"
         local_file.write_bytes(b"adapter")
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.upload_content_enrichment_training_artifact(
             "task-1",
             local_file,
@@ -549,8 +549,8 @@ class TestBackendClientTaskLifecycle:
         assert call.kwargs["headers"] == {"X-Task-Secret": "secret-1"}
         assert call.kwargs["files"]["file"][0] == "adapter.tar.gz"
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_complete_task_includes_content_enrichment_payloads(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -561,7 +561,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.complete_task(
             "task-1",
             "secret-1",
@@ -588,8 +588,8 @@ class TestBackendClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_fail_task_returns_typed_retry_result(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -604,7 +604,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.fail_task("task-1", "secret-1", "boom")
 
         assert isinstance(result, WorkerTaskFailureResult)
@@ -617,8 +617,8 @@ class TestBackendClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_check_superseded_returns_bool(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -629,7 +629,7 @@ class TestBackendClientTaskLifecycle:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
 
         assert client.check_superseded("task-1", "secret-1") is True
         session.post.assert_called_once_with(
@@ -639,9 +639,9 @@ class TestBackendClientTaskLifecycle:
         )
 
 
-class TestBackendClientFileAndVector:
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+class TestApiClientFileAndVector:
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_content_item_metadata_returns_typed_metadata(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -657,7 +657,7 @@ class TestBackendClientFileAndVector:
         session.get.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.get_content_item_metadata(
             "folder-1", "docs/test.pdf", "secret-1"
         )
@@ -671,8 +671,8 @@ class TestBackendClientFileAndVector:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_upload_extracted_file_returns_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -690,7 +690,7 @@ class TestBackendClientFileAndVector:
         local_file = tmp_path / "page-1.png"
         local_file.write_bytes(b"data")
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.upload_extracted_file(
             "file-1",
             "pages/page-1.png",
@@ -708,8 +708,8 @@ class TestBackendClientFileAndVector:
             "X-Task-Secret": "secret-1",
         }
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_upload_extracted_directory_returns_aggregate_result(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -737,7 +737,7 @@ class TestBackendClientFileAndVector:
         (local_dir / "page-1.png").write_bytes(b"data")
         (local_dir / "page-2.png").write_bytes(b"data2")
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.upload_extracted_directory(
             "file-1",
             local_dir,
@@ -760,8 +760,8 @@ class TestBackendClientFileAndVector:
             "X-Task-Secret": "secret-1",
         }
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_embeddings_parses_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -772,7 +772,7 @@ class TestBackendClientFileAndVector:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         embeddings = client.get_embeddings(
             ["a", "b"], task_id="task-1", task_secret="secret-1"
         )
@@ -785,8 +785,8 @@ class TestBackendClientFileAndVector:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_get_token_counts_serializes_text_request(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -797,7 +797,7 @@ class TestBackendClientFileAndVector:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         counts = client.get_token_counts(
             ["alpha", "beta"], task_id="task-1", task_secret="secret-1"
         )
@@ -810,8 +810,8 @@ class TestBackendClientFileAndVector:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_upsert_points_returns_typed_response_and_serializes_points(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -832,7 +832,7 @@ class TestBackendClientFileAndVector:
                 index_version="v1",
             ),
         )
-        client = BackendClient()
+        client = ApiClient()
         result = client.upsert_points(
             [point],
             folder_uuid="folder-1",
@@ -866,8 +866,8 @@ class TestBackendClientFileAndVector:
             headers={"X-Task-Id": "task-1", "X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.backend_client.get_settings")
-    @patch("services.backend_client.requests.Session")
+    @patch("services.api_client.get_settings")
+    @patch("services.api_client.requests.Session")
     def test_delete_points_returns_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -878,7 +878,7 @@ class TestBackendClientFileAndVector:
         session.post.return_value = response
         mock_session_cls.return_value = session
 
-        client = BackendClient()
+        client = ApiClient()
         result = client.delete_points(
             "docs/test.pdf",
             folder_uuid="folder-1",

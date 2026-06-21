@@ -1,0 +1,7 @@
+# Baseline ruff config for the repo (applies to api/ and any root-level scripts).
+# worker/ keeps its own stricter .ruff.toml, which overrides this for worker files
+# (ruff uses the nearest config per file and does not merge with parents).
+# Kept intentionally close to ruff defaults here to avoid surfacing a lint backlog
+# on api/; revisit if you want to share worker's stricter rule set across services.
+target-version = "py312"
+line-length = 88

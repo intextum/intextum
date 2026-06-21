@@ -1,0 +1,43 @@
+name: Lint
+
+# Source of truth for formatting/linting. Mirrors .pre-commit-config.yaml, which
+# devs run locally (and can bypass with --no-verify) — this gate cannot be skipped.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The prettier/eslint hooks reuse web/node_modules (language: system).
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: Run pre-commit on all files
+        uses: pre-commit/action@v3.0.1

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from models import WorkerClaimedTask
-from poll_runtime import (
+from intextum_worker.models import WorkerClaimedTask
+from intextum_worker.poll_runtime import (
     HttpJobContext,
     TaskProgress,
     coerce_task,
@@ -22,7 +22,7 @@ from poll_runtime import (
     stop_task_heartbeat,
     upload_extracted_output,
 )
-from processors import ProcessingResult
+from intextum_worker.processors import ProcessingResult
 
 
 def claimed_task() -> WorkerClaimedTask:
@@ -47,7 +47,9 @@ def http_error(status_code: int) -> requests.exceptions.HTTPError:
 
 
 def test_compute_backoff_seconds_uses_exponential_delay_with_jitter():
-    with patch("poll_runtime.random.uniform", return_value=0.75) as mock_uniform:
+    with patch(
+        "intextum_worker.poll_runtime.random.uniform", return_value=0.75
+    ) as mock_uniform:
         delay = compute_backoff_seconds(5.0, 3)
 
     assert delay == 20.75

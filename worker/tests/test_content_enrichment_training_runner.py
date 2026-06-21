@@ -3,13 +3,13 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from models import (
+from intextum_worker.models import (
     WorkerClaimedTask,
     WorkerContentEnrichmentTrainingArtifactUploadResponse,
     WorkerContentEnrichmentTrainingDataset,
     WorkerContentEnrichmentTrainingExample,
 )
-from services.content_enrichment_training_runner import (
+from intextum_worker.services.content_enrichment_training_runner import (
     build_gliner_training_examples,
     build_training_config_kwargs,
     execute_content_enrichment_training_task,
@@ -171,11 +171,11 @@ def test_execute_content_enrichment_training_task_runs_end_to_end(tmp_path):
 
     with (
         patch(
-            "services.content_enrichment_training_runner.settings.WORK_DIR",
+            "intextum_worker.services.content_enrichment_training_runner.settings.WORK_DIR",
             str(tmp_path),
         ),
         patch(
-            "services.content_enrichment_training_runner._load_gliner_training_classes",
+            "intextum_worker.services.content_enrichment_training_runner._load_gliner_training_classes",
             return_value=(FakeModel, FakeTrainer, FakeTrainingConfig),
         ),
     ):
@@ -261,11 +261,11 @@ def test_execute_content_enrichment_training_task_keeps_success_when_validation_
 
     with (
         patch(
-            "services.content_enrichment_training_runner.settings.WORK_DIR",
+            "intextum_worker.services.content_enrichment_training_runner.settings.WORK_DIR",
             str(tmp_path),
         ),
         patch(
-            "services.content_enrichment_training_runner._load_gliner_training_classes",
+            "intextum_worker.services.content_enrichment_training_runner._load_gliner_training_classes",
             return_value=(FakeModel, FakeTrainer, FakeTrainingConfig),
         ),
     ):

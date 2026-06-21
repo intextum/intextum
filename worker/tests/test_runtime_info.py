@@ -2,7 +2,7 @@
 
 import pytest
 
-from runtime_info import (
+from intextum_worker.runtime_info import (
     build_runtime_metadata,
     runtime_dependencies_for_capabilities,
     runtime_profile_for_device,
@@ -122,7 +122,7 @@ def test_build_runtime_metadata_omits_secrets_and_includes_runtime_fields(
     monkeypatch,
 ):
     monkeypatch.setattr(
-        "runtime_info._torch_probe",
+        "intextum_worker.runtime_info._torch_probe",
         lambda: {
             "torch_version": "2.6.0",
             "torch_mps_available": True,

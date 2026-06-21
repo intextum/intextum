@@ -6,8 +6,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from models import WorkerRuntimeConfig
-from processor_docling import chunk_docling_document, maybe_describe_standalone_image
+from intextum_worker.models import WorkerRuntimeConfig
+from intextum_worker.processor_docling import (
+    chunk_docling_document,
+    maybe_describe_standalone_image,
+)
 
 
 def test_maybe_describe_standalone_image_uses_first_page_image(tmp_path):

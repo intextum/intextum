@@ -2,7 +2,7 @@
 
 import pytest
 
-from config import parse_capabilities
+from intextum_worker.config import parse_capabilities
 
 
 def test_parse_capabilities_accepts_comma_string():

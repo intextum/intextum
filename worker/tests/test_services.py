@@ -3,25 +3,25 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from models import CustomConfig, WorkerRuntimeConfig
-from services.docling import (
+from intextum_worker.models import CustomConfig, WorkerRuntimeConfig
+from intextum_worker.services.docling import (
     _configure_pipeline_options,
     describe_image_via_vlm,
     get_custom_config,
 )
-from services.docling_asr import (
+from intextum_worker.services.docling_asr import (
     build_asr_options,
     sanitize_track_times,
     set_asr_language,
 )
-from services.docling_enrichment import (
+from intextum_worker.services.docling_enrichment import (
     extract_picture_enrichments,
     inject_standalone_image_as_picture,
 )
-from services.docling_enrichment import (
+from intextum_worker.services.docling_enrichment import (
     increment_picture_refs as _increment_picture_refs,
 )
-from services.vector import push_to_vector
+from intextum_worker.services.vector import push_to_vector
 
 
 class TestDoclingService:
@@ -34,9 +34,13 @@ class TestDoclingService:
             picture_description_prompt="Describe this image.",
         )
         with (
-            patch("services.docling.settings", mock_settings),
-            patch("services.docling.ApiClient", return_value=mock_client),
-            patch("services.docling.PictureDescriptionApiOptions") as mock_pic_opts,
+            patch("intextum_worker.services.docling.settings", mock_settings),
+            patch(
+                "intextum_worker.services.docling.ApiClient", return_value=mock_client
+            ),
+            patch(
+                "intextum_worker.services.docling.PictureDescriptionApiOptions"
+            ) as mock_pic_opts,
         ):
             options = _configure_pipeline_options(
                 config,
@@ -73,7 +77,7 @@ class TestDoclingService:
         assert "ocr_engine" not in config.model_dump()
         assert "embedding_model" not in config.model_dump()
 
-    @patch("services.docling.OcrMacOptions")
+    @patch("intextum_worker.services.docling.OcrMacOptions")
     def test_configure_pipeline_options_supports_ocrmac(
         self, mock_ocrmac_options, mock_settings
     ):
@@ -89,9 +93,11 @@ class TestDoclingService:
         )
 
         with (
-            patch("services.docling.settings", mock_settings),
-            patch("services.docling.ApiClient", return_value=mock_client),
-            patch("services.docling.PictureDescriptionApiOptions"),
+            patch("intextum_worker.services.docling.settings", mock_settings),
+            patch(
+                "intextum_worker.services.docling.ApiClient", return_value=mock_client
+            ),
+            patch("intextum_worker.services.docling.PictureDescriptionApiOptions"),
         ):
             options = _configure_pipeline_options(
                 config,
@@ -103,7 +109,7 @@ class TestDoclingService:
         mock_ocrmac_options.assert_called_once_with()
         assert options.ocr_options == mock_ocrmac_instance
 
-    @patch("services.docling.PictureDescriptionApiOptions")
+    @patch("intextum_worker.services.docling.PictureDescriptionApiOptions")
     def test_configure_pipeline_options_normalizes_ocrmac_langs(
         self, _mock_pic_opts, mock_settings
     ):
@@ -117,8 +123,10 @@ class TestDoclingService:
         )
 
         with (
-            patch("services.docling.settings", mock_settings),
-            patch("services.docling.ApiClient", return_value=mock_client),
+            patch("intextum_worker.services.docling.settings", mock_settings),
+            patch(
+                "intextum_worker.services.docling.ApiClient", return_value=mock_client
+            ),
         ):
             options = _configure_pipeline_options(
                 config,
@@ -129,8 +137,8 @@ class TestDoclingService:
 
         assert options.ocr_options.lang == ["de-DE", "en-US"]
 
-    @patch("services.docling.logger.warning")
-    @patch("services.docling.PictureDescriptionApiOptions")
+    @patch("intextum_worker.services.docling.logger.warning")
+    @patch("intextum_worker.services.docling.PictureDescriptionApiOptions")
     def test_configure_pipeline_options_ignores_invalid_ocrmac_langs(
         self, _mock_pic_opts, mock_warning, mock_settings
     ):
@@ -144,8 +152,10 @@ class TestDoclingService:
         )
 
         with (
-            patch("services.docling.settings", mock_settings),
-            patch("services.docling.ApiClient", return_value=mock_client),
+            patch("intextum_worker.services.docling.settings", mock_settings),
+            patch(
+                "intextum_worker.services.docling.ApiClient", return_value=mock_client
+            ),
         ):
             options = _configure_pipeline_options(
                 config,
@@ -410,9 +420,9 @@ class TestExtractPictureEnrichments:
 
 
 class TestDescribeImageViaVlm:
-    @patch("services.docling.requests.post")
-    @patch("services.docling.ApiClient")
-    @patch("services.docling.settings")
+    @patch("intextum_worker.services.docling.requests.post")
+    @patch("intextum_worker.services.docling.ApiClient")
+    @patch("intextum_worker.services.docling.settings")
     def test_successful_vlm_call(
         self, mock_settings, mock_api_cls, mock_post, tmp_path
     ):
@@ -456,9 +466,9 @@ class TestDescribeImageViaVlm:
         assert call_kwargs.kwargs["headers"]["X-Task-Secret"] == "task-secret"
         assert call_kwargs.args[0].endswith("/api/worker/vlm/chat/completions")
 
-    @patch("services.docling.requests.post")
-    @patch("services.docling.ApiClient")
-    @patch("services.docling.settings")
+    @patch("intextum_worker.services.docling.requests.post")
+    @patch("intextum_worker.services.docling.ApiClient")
+    @patch("intextum_worker.services.docling.settings")
     def test_png_mime_type(self, mock_settings, mock_api_cls, mock_post, tmp_path):
         mock_settings.API_URL = "http://localhost:8000"
         mock_settings.WORKER_TOKEN = "test-token"
@@ -524,7 +534,7 @@ class TestIncrementPictureRefs:
 
 
 class TestVectorService:
-    @patch("services.vector.ApiClient")
+    @patch("intextum_worker.services.vector.ApiClient")
     def test_push_to_vector_uses_file_id_for_point_namespace(self, mock_client_cls):
         mock_client = MagicMock()
         mock_client.get_embeddings.return_value = [[0.1, 0.2]]
@@ -556,8 +566,8 @@ class TestVectorService:
 
         assert first_points[0].id != second_points[0].id
 
-    @patch("services.vector._build_image_uri_map")
-    @patch("services.vector.ApiClient")
+    @patch("intextum_worker.services.vector._build_image_uri_map")
+    @patch("intextum_worker.services.vector.ApiClient")
     def test_push_to_vector_includes_structured_chunk_fields(
         self, mock_client_cls, mock_image_uri_map
     ):
@@ -601,7 +611,7 @@ class TestVectorService:
         }
         assert mock_client.delete_points.call_args.kwargs["content_item_id"] == "file-a"
 
-    @patch("services.vector.ApiClient")
+    @patch("intextum_worker.services.vector.ApiClient")
     def test_push_to_vector_passes_metadata_for_client_side_merge(
         self, mock_client_cls
     ):

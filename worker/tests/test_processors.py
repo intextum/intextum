@@ -6,12 +6,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from models import (
+from intextum_worker.models import (
     WorkerDownloadedSourceFile,
     WorkerProcessorContext,
     WorkerRuntimeConfig,
 )
-from processors import (
+from intextum_worker.processors import (
     ProcessingResult,
     SimpleChunk,
     download_source_file,
@@ -79,7 +79,7 @@ def mock_logger():
 def patch_settings(mock_settings):
     """Patch global settings used by the processors module."""
     mock_settings.WORK_DIR = "/tmp/worker"
-    with patch("processors.settings", mock_settings):
+    with patch("intextum_worker.processors.settings", mock_settings):
         yield
 
 
@@ -105,7 +105,7 @@ class TestModels:
 
 
 class TestPathHelpers:
-    @patch("processors.ApiClient")
+    @patch("intextum_worker.processors.ApiClient")
     def test_download_source_file_downloads_from_backend(self, mock_client_cls):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -130,7 +130,7 @@ class TestPathHelpers:
         assert result.local_path == Path("/tmp/worker/input/test.pdf")
         assert result.relative_path == "documents/test.pdf"
 
-    @patch("processors.ApiClient")
+    @patch("intextum_worker.processors.ApiClient")
     def test_download_source_file_scopes_downloads_by_file_id(self, mock_client_cls):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -163,7 +163,7 @@ class TestPathHelpers:
 
 
 class TestVideoProcessor:
-    @patch("processors.push_to_vector")
+    @patch("intextum_worker.processors.push_to_vector")
     def test_video_metadata_success(self, mock_push, mock_logger, tmp_path):
         file_path = tmp_path / "video.mp4"
         file_path.touch()
@@ -186,7 +186,7 @@ class TestVideoProcessor:
         # Stage is reported to the heartbeat as the processor advances.
         assert job_ctx.stages == ["indexing", "embedding"]
 
-    @patch("processors.push_to_vector")
+    @patch("intextum_worker.processors.push_to_vector")
     def test_video_metadata_aborts_when_superseded(
         self, mock_push, mock_logger, tmp_path
     ):
@@ -205,7 +205,7 @@ class TestVideoProcessor:
         assert result.aborted is True
         mock_push.assert_not_called()
 
-    @patch("processors.push_to_vector")
+    @patch("intextum_worker.processors.push_to_vector")
     def test_video_metadata_aborts_before_vector_when_late_superseded(
         self, mock_push, mock_logger, tmp_path
     ):
@@ -240,7 +240,7 @@ class TestVideoProcessor:
 
 
 class TestDocumentProcessor:
-    @patch("processors.run_docling_conversion")
+    @patch("intextum_worker.processors.run_docling_conversion")
     def test_document_aborts_before_conversion(
         self, mock_convert, mock_logger, tmp_path
     ):
@@ -259,13 +259,13 @@ class TestDocumentProcessor:
         assert result.aborted is True
         mock_convert.assert_not_called()
 
-    @patch("processors.push_to_vector")
-    @patch("processors._run_content_enrichment")
-    @patch("processors.ApiEmbeddingTokenizer")
-    @patch("processors.ApiClient")
-    @patch("processors.extract_picture_enrichments")
-    @patch("processors.save_conversion_results")
-    @patch("processors.run_docling_conversion")
+    @patch("intextum_worker.processors.push_to_vector")
+    @patch("intextum_worker.processors._run_content_enrichment")
+    @patch("intextum_worker.processors.ApiEmbeddingTokenizer")
+    @patch("intextum_worker.processors.ApiClient")
+    @patch("intextum_worker.processors.extract_picture_enrichments")
+    @patch("intextum_worker.processors.save_conversion_results")
+    @patch("intextum_worker.processors.run_docling_conversion")
     @patch("pathlib.Path.mkdir")
     def test_document_success_pdf(
         self,
@@ -345,13 +345,13 @@ class TestDocumentProcessor:
         assert result.metadata["document_classification"]["label"] == "Permit"
         assert result.metadata["document_extraction"]["schema_name"] == "permit_core"
 
-    @patch("processors.push_to_vector")
-    @patch("processors._run_content_enrichment")
-    @patch("processors.ApiEmbeddingTokenizer")
-    @patch("processors.ApiClient")
-    @patch("processors.extract_picture_enrichments")
-    @patch("processors.save_conversion_results")
-    @patch("processors.run_docling_conversion")
+    @patch("intextum_worker.processors.push_to_vector")
+    @patch("intextum_worker.processors._run_content_enrichment")
+    @patch("intextum_worker.processors.ApiEmbeddingTokenizer")
+    @patch("intextum_worker.processors.ApiClient")
+    @patch("intextum_worker.processors.extract_picture_enrichments")
+    @patch("intextum_worker.processors.save_conversion_results")
+    @patch("intextum_worker.processors.run_docling_conversion")
     @patch("pathlib.Path.mkdir")
     def test_document_aborts_before_vector_when_late_superseded(
         self,
@@ -413,7 +413,7 @@ class TestDocumentProcessor:
 
 
 class TestAudioProcessor:
-    @patch("processors.run_asr_conversion")
+    @patch("intextum_worker.processors.run_asr_conversion")
     def test_audio_aborts_before_conversion(self, mock_asr, mock_logger, tmp_path):
         file_path = tmp_path / "audio.mp3"
         job_ctx = MockJobContext(superseded=True)
@@ -430,11 +430,11 @@ class TestAudioProcessor:
         assert result.aborted is True
         mock_asr.assert_not_called()
 
-    @patch("processors.push_to_vector")
-    @patch("processors.ApiEmbeddingTokenizer")
-    @patch("processors.ApiClient")
-    @patch("processors.save_conversion_results")
-    @patch("processors.run_asr_conversion")
+    @patch("intextum_worker.processors.push_to_vector")
+    @patch("intextum_worker.processors.ApiEmbeddingTokenizer")
+    @patch("intextum_worker.processors.ApiClient")
+    @patch("intextum_worker.processors.save_conversion_results")
+    @patch("intextum_worker.processors.run_asr_conversion")
     @patch("pathlib.Path.mkdir")
     def test_audio_success(
         self,
@@ -505,11 +505,11 @@ class TestAudioProcessor:
             "test-embedding-model"
         )
 
-    @patch("processors.push_to_vector")
-    @patch("processors.ApiEmbeddingTokenizer")
-    @patch("processors.ApiClient")
-    @patch("processors.save_conversion_results")
-    @patch("processors.run_asr_conversion")
+    @patch("intextum_worker.processors.push_to_vector")
+    @patch("intextum_worker.processors.ApiEmbeddingTokenizer")
+    @patch("intextum_worker.processors.ApiClient")
+    @patch("intextum_worker.processors.save_conversion_results")
+    @patch("intextum_worker.processors.run_asr_conversion")
     @patch("pathlib.Path.mkdir")
     def test_audio_aborts_before_vector_when_late_superseded(
         self,

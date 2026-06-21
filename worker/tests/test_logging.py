@@ -3,7 +3,7 @@
 import json
 import logging
 
-from logging_config import (
+from intextum_worker.logging_config import (
     CorrelatedLogger,
     LoggingContext,
     StructuredFormatter,
@@ -31,7 +31,7 @@ class TestCorrelationId:
 
     def test_get_correlation_id_returns_none_when_not_set(self):
         # Reset context
-        from logging_config import correlation_id_var
+        from intextum_worker.logging_config import correlation_id_var
 
         correlation_id_var.set(None)
 
@@ -150,7 +150,7 @@ class TestGetLogger:
         assert logger.correlation_id == "provided-cid"
 
     def test_generates_correlation_id_if_not_provided(self):
-        from logging_config import correlation_id_var
+        from intextum_worker.logging_config import correlation_id_var
 
         correlation_id_var.set(None)
 

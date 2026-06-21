@@ -19,4 +19,4 @@ export DOCLING_OCR_ENGINE="${DOCLING_OCR_ENGINE:-ocrmac}"
 export ASR_MODEL="${ASR_MODEL:-whisper_large_v3}"
 export WORK_DIR="${WORK_DIR:-/tmp/intextum-worker}"
 
-exec python main.py "$@"
+exec intextum-worker "$@"

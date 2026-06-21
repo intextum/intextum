@@ -47,9 +47,10 @@ mock_module("gliner2")
 mock_module("PIL")
 mock_module("torch")
 
-# Add worker directory to path for imports
-worker_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(worker_dir))
+# Add the package source directory to path so the installed-layout package
+# (``src/intextum_worker``) is importable without an editable install.
+src_dir = Path(__file__).parent.parent / "src"
+sys.path.insert(0, str(src_dir))
 
 
 @pytest.fixture

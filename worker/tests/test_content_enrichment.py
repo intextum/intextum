@@ -2,11 +2,11 @@
 
 from unittest.mock import MagicMock, patch
 
-from models import WorkerDocumentClassificationLabel
-from services.content_enrichment import classify_document
+from intextum_worker.models import WorkerDocumentClassificationLabel
+from intextum_worker.services.content_enrichment import classify_document
 
 
-@patch("services.content_enrichment.model_artifacts._load_extractor")
+@patch("intextum_worker.services.content_enrichment.model_artifacts._load_extractor")
 def test_classify_document_uses_gliner2_classification(mock_load_extractor):
     chunk = type(
         "Chunk", (), {"text": "Permit notice for project 1410", "meta": None}
@@ -40,7 +40,7 @@ def test_classify_document_uses_gliner2_classification(mock_load_extractor):
     }
 
 
-@patch("services.content_enrichment.model_artifacts._load_extractor")
+@patch("intextum_worker.services.content_enrichment.model_artifacts._load_extractor")
 def test_classify_document_preserves_gliner2_confidence(mock_load_extractor):
     extractor = MagicMock()
     extractor.classify_text.return_value = {
@@ -61,7 +61,7 @@ def test_classify_document_preserves_gliner2_confidence(mock_load_extractor):
     assert result.confidence == 0.87
 
 
-@patch("services.content_enrichment.model_artifacts._load_extractor")
+@patch("intextum_worker.services.content_enrichment.model_artifacts._load_extractor")
 def test_classify_document_sends_descriptions_and_can_choose_second_label(
     mock_load_extractor,
 ):
@@ -106,7 +106,7 @@ def test_classify_document_sends_descriptions_and_can_choose_second_label(
     }
 
 
-@patch("services.content_enrichment.model_artifacts._load_extractor")
+@patch("intextum_worker.services.content_enrichment.model_artifacts._load_extractor")
 def test_classify_document_skips_implicit_other_for_single_class(mock_load_extractor):
     extractor = MagicMock()
     extractor.classify_text.return_value = {
@@ -130,7 +130,7 @@ def test_classify_document_skips_implicit_other_for_single_class(mock_load_extra
     )
 
 
-@patch("services.content_enrichment.model_artifacts._load_extractor")
+@patch("intextum_worker.services.content_enrichment.model_artifacts._load_extractor")
 def test_classify_document_resolves_candidate_confidence(mock_load_extractor):
     extractor = MagicMock()
     extractor.classify_text.return_value = {
@@ -158,7 +158,9 @@ def test_classify_document_resolves_candidate_confidence(mock_load_extractor):
 
 def test_schema_models_override_keys_by_id_with_name_fallback():
     """schema_models lookup prefers schema.id so renames don't break overrides."""
-    from services.content_enrichment.merge import _resolve_extraction_model_name
+    from intextum_worker.services.content_enrichment.merge import (
+        _resolve_extraction_model_name,
+    )
 
     # id match takes priority over name.
     assert (

@@ -6,17 +6,19 @@ import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from models import (
+from intextum_worker.models import (
     WorkerDocumentExtractionSchema,
 )
-from services.content_enrichment.langgraph_provider import (
+from intextum_worker.services.content_enrichment.langgraph_provider import (
     LANGGRAPH_PROVIDER,
     LangGraphExtractionProvider,
     _focused_repeated_field_chunks,
     _fuzzy_locate,
     _json_schema_response_format_for_batch,
 )
-from services.content_enrichment.registry import DocumentExtractionProviderConfig
+from intextum_worker.services.content_enrichment.registry import (
+    DocumentExtractionProviderConfig,
+)
 
 _SAMPLE_DOC_TEXT = (
     "Notice Approval Compensation\n"
@@ -240,11 +242,11 @@ def test_full_text_pass_extracts_all_fields_with_evidence():
     ]
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(2, True, 50_000),
         ),
     ):
@@ -309,7 +311,7 @@ def test_null_scalar_and_empty_list_normalize_to_missing_values():
     ]
 
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -363,7 +365,7 @@ def test_json_schema_unsupported_retries_with_json_object():
     ]
 
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -428,11 +430,11 @@ def test_missing_required_triggers_one_prompt_only_retry():
     ]
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(1, True, 50_000),
         ),
     ):
@@ -479,15 +481,15 @@ def test_semantic_path_used_when_text_exceeds_threshold():
 
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._select_extraction_chunks",
+            "intextum_worker.services.content_enrichment.langgraph_provider._select_extraction_chunks",
             side_effect=_fake_select,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(0, False, 200),  # threshold below text length forces semantic
         ),
     ):
@@ -526,11 +528,11 @@ def test_missing_evidence_flagged_when_required():
     )
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(0, True, 50_000),
         ),
     ):
@@ -621,7 +623,7 @@ def test_list_fields_run_separately_with_focused_source_window():
     ]
 
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -719,7 +721,7 @@ def test_list_field_focus_prefers_section_heading_over_generic_reference():
     )
 
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -778,7 +780,7 @@ def test_items_without_evidence_counts_each_missing_record():
     client = MagicMock()
     client.chat.completions.create.return_value = _fake_openai_response(payload)
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -847,7 +849,7 @@ def test_scattered_list_field_skips_focused_window():
         )
     )
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -919,7 +921,7 @@ def test_heading_aliases_match_german_section_for_english_named_field():
         )
     )
     with patch(
-        "services.content_enrichment.langgraph_provider._build_openai_client",
+        "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
         return_value=client,
     ):
         result = LangGraphExtractionProvider().extract(
@@ -1063,11 +1065,11 @@ def test_invalid_json_batch_fails_even_after_other_fields_parse():
     client.chat.completions.create.side_effect = lambda *_, **__: next(response_iter)
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(0, True, 50_000),
         ),
     ):
@@ -1124,11 +1126,11 @@ def test_length_finish_retries_with_larger_token_budget():
     ]
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(0, True, 50_000),
         ),
     ):
@@ -1164,11 +1166,11 @@ def test_invalid_json_marks_extraction_failed():
     )
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(0, True, 50_000),
         ),
     ):
@@ -1192,11 +1194,11 @@ def test_empty_chat_content_marks_extraction_failed():
     client.chat.completions.create.return_value = _fake_openai_response("")
     with (
         patch(
-            "services.content_enrichment.langgraph_provider._build_openai_client",
+            "intextum_worker.services.content_enrichment.langgraph_provider._build_openai_client",
             return_value=client,
         ),
         patch(
-            "services.content_enrichment.langgraph_provider._runtime_settings",
+            "intextum_worker.services.content_enrichment.langgraph_provider._runtime_settings",
             return_value=(0, True, 50_000),
         ),
     ):

@@ -7,7 +7,7 @@ import pytest
 import requests
 from pydantic import ValidationError
 
-from models import (
+from intextum_worker.models import (
     WorkerClaimedTask,
     WorkerContentEnrichmentSourceChunk,
     WorkerContentEnrichmentTaskSource,
@@ -17,7 +17,7 @@ from models import (
     WorkerProcessorContext,
     WorkerTaskMetadata,
 )
-from poll_loop import (
+from intextum_worker.poll_loop import (
     AUDIO_EXTENSIONS,
     DOCUMENT_EXTENSIONS,
     IMAGE_EXTENSIONS,
@@ -25,7 +25,7 @@ from poll_loop import (
     HttpJobContext,
     _process_task,
 )
-from processors import ProcessingResult, SimpleChunk
+from intextum_worker.processors import ProcessingResult, SimpleChunk
 
 
 def downloaded_source_file(
@@ -75,8 +75,8 @@ def test_claimed_task_processor_context_preserves_task_identity():
 def patch_settings(mock_settings):
     mock_settings.WORK_DIR = "/tmp/worker"
     with (
-        patch("poll_loop.settings", mock_settings),
-        patch("processors.settings", mock_settings),
+        patch("intextum_worker.poll_loop.settings", mock_settings),
+        patch("intextum_worker.processors.settings", mock_settings),
     ):
         yield
 
@@ -148,8 +148,8 @@ class TestSimpleChunk:
 
 
 class TestProcessTask:
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_routes_pdf_to_document_processor(
         self, mock_get_path, mock_process, tmp_path
     ):
@@ -179,8 +179,8 @@ class TestProcessTask:
         mock_process.assert_called_once()
         client.complete_task.assert_called_once_with("task-1", "secret-1")
 
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_accepts_typed_claimed_task(self, mock_get_path, mock_process, tmp_path):
         test_file = tmp_path / "typed.pdf"
         test_file.touch()
@@ -206,8 +206,8 @@ class TestProcessTask:
 
         client.complete_task.assert_called_once_with("task-typed", "secret-typed")
 
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_forwards_processing_config_on_completion(
         self, mock_get_path, mock_process, tmp_path
     ):
@@ -241,8 +241,8 @@ class TestProcessTask:
             processing_config={"do_ocr": False},
         )
 
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_materializes_inline_email_document_without_backend_download(
         self, mock_get_path, mock_process, tmp_path
     ):
@@ -257,8 +257,10 @@ class TestProcessTask:
         )
 
         with (
-            patch("poll_loop.settings.WORK_DIR", str(tmp_path)),
-            patch("poll_loop.WorkerTaskRun.cleanup", autospec=True) as mock_cleanup,
+            patch("intextum_worker.poll_loop.settings.WORK_DIR", str(tmp_path)),
+            patch(
+                "intextum_worker.poll_loop.WorkerTaskRun.cleanup", autospec=True
+            ) as mock_cleanup,
         ):
             client = MagicMock()
             task = {
@@ -287,8 +289,8 @@ class TestProcessTask:
         assert inline_path.read_text(encoding="utf-8") == inline_html
         client.complete_task.assert_called_once_with("task-inline", "secret-inline")
 
-    @patch("poll_loop.process_video_metadata")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_video_metadata")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_routes_video_to_video_processor(
         self, mock_get_path, mock_process, tmp_path
     ):
@@ -318,8 +320,8 @@ class TestProcessTask:
         mock_process.assert_called_once()
         client.complete_task.assert_called_once()
 
-    @patch("poll_loop.process_audio")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_audio")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_routes_audio_to_audio_processor(
         self, mock_get_path, mock_process, tmp_path
     ):
@@ -349,7 +351,7 @@ class TestProcessTask:
         mock_process.assert_called_once()
         client.complete_task.assert_called_once()
 
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_completes_for_missing_file(self, mock_get_path, tmp_path):
         mock_get_path.return_value = downloaded_source_file(tmp_path / "missing.pdf")
 
@@ -368,7 +370,7 @@ class TestProcessTask:
 
         client.complete_task.assert_called_once()
 
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_completes_for_unsupported_type(self, mock_get_path, tmp_path):
         test_file = tmp_path / "test.xyz"
         test_file.touch()
@@ -389,9 +391,9 @@ class TestProcessTask:
 
         client.complete_task.assert_called_once()
 
-    @patch("poll_loop._upload_extracted_output")
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop._upload_extracted_output")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_upload_failure_stops_before_completion(
         self,
         mock_get_path,
@@ -445,8 +447,8 @@ class TestProcessTask:
                 content_item_id="abc123",
             )
 
-    @patch("poll_loop.execute_content_enrichment_training_task")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.execute_content_enrichment_training_task")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_training_task_routes_to_training_executor(
         self,
         mock_get_path,
@@ -478,8 +480,8 @@ class TestProcessTask:
         client.complete_task.assert_not_called()
         client.fail_task.assert_not_called()
 
-    @patch("poll_loop._run_content_enrichment")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop._run_content_enrichment")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_enrichment_only_task_reruns_without_downloading_source(
         self,
         mock_get_path,
@@ -551,8 +553,8 @@ class TestProcessTask:
         assert kwargs["document_classification"].label == "Invoice"
         assert kwargs["document_extraction"].schema_name == "invoice_fields"
 
-    @patch("poll_loop._run_content_enrichment")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop._run_content_enrichment")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_forced_enrichment_only_task_reports_skipped_classification(
         self,
         mock_get_path,
@@ -614,7 +616,7 @@ class TestProcessTask:
         assert kwargs["document_classification"] is classification
         assert kwargs["document_extraction"] is extraction
 
-    @patch("poll_loop.execute_content_enrichment_training_task")
+    @patch("intextum_worker.poll_loop.execute_content_enrichment_training_task")
     def test_training_task_reports_failure_when_executor_raises(
         self,
         mock_execute_training,
@@ -643,8 +645,8 @@ class TestProcessTask:
 
         client.fail_task.assert_called_once()
 
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_reports_failure_on_exception(self, mock_get_path, mock_process, tmp_path):
         test_file = tmp_path / "test.pdf"
         test_file.touch()
@@ -666,8 +668,8 @@ class TestProcessTask:
 
         client.fail_task.assert_called_once()
 
-    @patch("poll_loop.process_document")
-    @patch("poll_loop.download_source_file")
+    @patch("intextum_worker.poll_loop.process_document")
+    @patch("intextum_worker.poll_loop.download_source_file")
     def test_aborted_result_reports_abort_not_completion(
         self, mock_get_path, mock_process, tmp_path
     ):

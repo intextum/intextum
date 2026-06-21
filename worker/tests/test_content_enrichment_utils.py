@@ -2,8 +2,11 @@
 
 from types import SimpleNamespace
 
-from models import WorkerDocumentEvidence, WorkerDocumentExtractionSchema
-from services.content_enrichment_utils import (
+from intextum_worker.models import (
+    WorkerDocumentEvidence,
+    WorkerDocumentExtractionSchema,
+)
+from intextum_worker.services.content_enrichment_utils import (
     MAX_EXTRACTION_WINDOWS,
     _build_chunk_evidence,
     _coerce_field_value,
@@ -145,7 +148,7 @@ def test_extraction_window_text_renders_table_items_as_markdown():
             return _FakeDataFrame()
 
     # Stand in for TableItem so the isinstance check passes via runtime import shim.
-    import services.content_enrichment_utils as utils_module
+    import intextum_worker.services.content_enrichment_utils as utils_module
 
     fake_table = _FakeTable()
     chunk = SimpleNamespace(

@@ -198,6 +198,9 @@ smb_share
 extracted
 model-artifacts
 worker/requirements/locks/
+# Build-time copy of the root VERSION file staged for the worker package build
+# (see worker/pyproject.toml dynamic version). The repo-root VERSION is the source.
+worker/VERSION
 
 config.yaml
 

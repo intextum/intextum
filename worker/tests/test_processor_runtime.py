@@ -4,13 +4,13 @@ import time
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from models import (
+from intextum_worker.models import (
     WorkerDocumentClassificationResult,
     WorkerDocumentExtractionResult,
     WorkerDocumentExtractionSchema,
     WorkerRuntimeConfig,
 )
-from processor_runtime import (
+from intextum_worker.processor_runtime import (
     ContentEnrichmentStageTimeout,
     SimpleChunk,
     _enrichment_stage_deadline,
@@ -105,9 +105,13 @@ def test_run_content_enrichment_marks_failed_classification():
     )
 
     with (
-        patch("processor_runtime.classify_document", side_effect=RuntimeError("boom")),
         patch(
-            "processor_runtime.extract_document_data", return_value=extraction_result
+            "intextum_worker.processor_runtime.classify_document",
+            side_effect=RuntimeError("boom"),
+        ),
+        patch(
+            "intextum_worker.processor_runtime.extract_document_data",
+            return_value=extraction_result,
         ),
     ):
         classification, extraction = _run_content_enrichment(
@@ -137,12 +141,15 @@ def test_run_content_enrichment_marks_timed_out_classification():
 
     with (
         patch(
-            "processor_runtime.get_settings",
+            "intextum_worker.processor_runtime.get_settings",
             return_value=SimpleNamespace(CONTENT_ENRICHMENT_STAGE_TIMEOUT_SECONDS=0.01),
         ),
-        patch("processor_runtime.classify_document", side_effect=slow_classification),
         patch(
-            "processor_runtime.extract_document_data",
+            "intextum_worker.processor_runtime.classify_document",
+            side_effect=slow_classification,
+        ),
+        patch(
+            "intextum_worker.processor_runtime.extract_document_data",
             return_value=extraction_result,
         ),
     ):
@@ -180,14 +187,17 @@ def test_run_content_enrichment_marks_timed_out_extraction():
 
     with (
         patch(
-            "processor_runtime.get_settings",
+            "intextum_worker.processor_runtime.get_settings",
             return_value=SimpleNamespace(CONTENT_ENRICHMENT_STAGE_TIMEOUT_SECONDS=0.01),
         ),
         patch(
-            "processor_runtime.classify_document",
+            "intextum_worker.processor_runtime.classify_document",
             return_value=classification_result,
         ),
-        patch("processor_runtime.extract_document_data", side_effect=slow_extraction),
+        patch(
+            "intextum_worker.processor_runtime.extract_document_data",
+            side_effect=slow_extraction,
+        ),
     ):
         classification, extraction = _run_content_enrichment(
             text="Document text",
@@ -226,11 +236,11 @@ def test_run_content_enrichment_passes_classification_label_to_extraction():
 
     with (
         patch(
-            "processor_runtime.classify_document",
+            "intextum_worker.processor_runtime.classify_document",
             return_value=classification_result,
         ) as mock_classify,
         patch(
-            "processor_runtime.extract_document_data",
+            "intextum_worker.processor_runtime.extract_document_data",
             return_value=extraction_result,
         ) as mock_extract,
     ):
@@ -270,10 +280,11 @@ def test_run_content_enrichment_uses_current_document_class_when_classifier_has_
 
     with (
         patch(
-            "processor_runtime.classify_document", return_value=classification_result
+            "intextum_worker.processor_runtime.classify_document",
+            return_value=classification_result,
         ),
         patch(
-            "processor_runtime.extract_document_data",
+            "intextum_worker.processor_runtime.extract_document_data",
             return_value=extraction_result,
         ) as mock_extract,
     ):
@@ -303,9 +314,9 @@ def test_run_content_enrichment_forced_class_skips_classification():
     )
 
     with (
-        patch("processor_runtime.classify_document") as mock_classify,
+        patch("intextum_worker.processor_runtime.classify_document") as mock_classify,
         patch(
-            "processor_runtime.extract_document_data",
+            "intextum_worker.processor_runtime.extract_document_data",
             return_value=extraction_result,
         ) as mock_extract,
     ):
@@ -344,9 +355,9 @@ def test_run_content_enrichment_extraction_only_runs_on_existing_class():
     )
 
     with (
-        patch("processor_runtime.classify_document") as mock_classify,
+        patch("intextum_worker.processor_runtime.classify_document") as mock_classify,
         patch(
-            "processor_runtime.extract_document_data",
+            "intextum_worker.processor_runtime.extract_document_data",
             return_value=extraction_result,
         ) as mock_extract,
     ):
@@ -379,10 +390,12 @@ def test_run_content_enrichment_classification_only_skips_extraction():
 
     with (
         patch(
-            "processor_runtime.classify_document",
+            "intextum_worker.processor_runtime.classify_document",
             return_value=classification_result,
         ) as mock_classify,
-        patch("processor_runtime.extract_document_data") as mock_extract,
+        patch(
+            "intextum_worker.processor_runtime.extract_document_data"
+        ) as mock_extract,
     ):
         classification, extraction = _run_content_enrichment(
             text="Document text",
@@ -412,9 +425,9 @@ def test_run_content_enrichment_logs_chat_extraction_provider_plan():
     )
 
     with (
-        patch("processor_runtime.classify_document") as mock_classify,
+        patch("intextum_worker.processor_runtime.classify_document") as mock_classify,
         patch(
-            "processor_runtime.extract_document_data",
+            "intextum_worker.processor_runtime.extract_document_data",
             return_value=extraction_result,
         ),
     ):

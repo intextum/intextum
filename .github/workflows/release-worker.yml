@@ -1,0 +1,60 @@
+name: Release worker (PyPI)
+
+# Builds and publishes the intextum-worker package.
+#
+# NOT yet active: publishing requires PyPI auth to be configured first — either a
+# Trusted Publisher for this repo/workflow on PyPI (recommended, no secrets), or a
+# PYPI_API_TOKEN secret. Until then the build job runs and uploads the wheel as a
+# workflow artifact, but the publish job is gated on the `pypi` environment.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stage shared VERSION into the worker package
+        run: cp VERSION worker/VERSION
+
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build --outdir dist worker
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: intextum-worker-dist
+          path: dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only publish for vX.Y.Z release tags. A workflow_dispatch run on a branch
+    # (the build-only dry run) skips this job cleanly instead of failing the
+    # environment gate. Belt-and-suspenders with the `pypi` environment's
+    # deployment-tag restriction.
+    if: startsWith(github.ref, 'refs/tags/v')
+    # Publishing requires the PyPI Trusted Publisher + this `pypi` environment.
+    environment: pypi
+    permissions:
+      id-token: write # OIDC for PyPI Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: intextum-worker-dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

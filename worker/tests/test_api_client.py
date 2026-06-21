@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from models import (
+from intextum_worker.models import (
     WorkerApiStatusResponse,
     WorkerClaimedTask,
     WorkerContentEnrichmentChunkSearchQuery,
@@ -22,7 +22,7 @@ from models import (
     WorkerVectorPoint,
     WorkerVectorUpsertResponse,
 )
-from services.api_client import API_TIMEOUT, ApiClient
+from intextum_worker.services.api_client import API_TIMEOUT, ApiClient
 
 
 def _mock_session() -> MagicMock:
@@ -33,8 +33,8 @@ def _mock_session() -> MagicMock:
 
 
 class TestApiClientConfig:
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_config_returns_typed_runtime_config_and_caches_per_instance(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -98,8 +98,8 @@ class TestApiClientConfig:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_config_force_refresh_reloads_runtime_config(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -126,8 +126,8 @@ class TestApiClientConfig:
         assert second.embedding_model == "model-b"
         assert session.get.call_count == 2
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_config_cache_is_not_shared_between_instances(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -170,8 +170,8 @@ class TestApiClientConfig:
         assert session_a.get.call_count == 1
         assert session_b.get.call_count == 1
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_report_runtime_metadata_posts_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -211,8 +211,8 @@ class TestApiClientConfig:
 
 
 class TestApiClientTaskLifecycle:
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_claim_task_serializes_capabilities_and_parses_task(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -245,8 +245,8 @@ class TestApiClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_content_enrichment_training_dataset_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -299,8 +299,8 @@ class TestApiClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_content_enrichment_registry_model_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -331,8 +331,8 @@ class TestApiClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_content_enrichment_task_source_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -369,8 +369,8 @@ class TestApiClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_search_content_enrichment_chunks_returns_typed_payload(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -421,8 +421,8 @@ class TestApiClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_download_content_enrichment_model_artifact_writes_local_file(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -448,8 +448,8 @@ class TestApiClientTaskLifecycle:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_complete_task_returns_status_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -475,8 +475,8 @@ class TestApiClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_complete_content_enrichment_training_task_returns_status_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -507,8 +507,8 @@ class TestApiClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_upload_content_enrichment_training_artifact_returns_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -549,8 +549,8 @@ class TestApiClientTaskLifecycle:
         assert call.kwargs["headers"] == {"X-Task-Secret": "secret-1"}
         assert call.kwargs["files"]["file"][0] == "adapter.tar.gz"
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_complete_task_includes_content_enrichment_payloads(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -588,8 +588,8 @@ class TestApiClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_fail_task_returns_typed_retry_result(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -617,8 +617,8 @@ class TestApiClientTaskLifecycle:
             timeout=API_TIMEOUT,
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_check_superseded_returns_bool(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -640,8 +640,8 @@ class TestApiClientTaskLifecycle:
 
 
 class TestApiClientFileAndVector:
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_content_item_metadata_returns_typed_metadata(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -671,8 +671,8 @@ class TestApiClientFileAndVector:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_upload_extracted_file_returns_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -708,8 +708,8 @@ class TestApiClientFileAndVector:
             "X-Task-Secret": "secret-1",
         }
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_upload_extracted_directory_returns_aggregate_result(
         self, mock_session_cls, mock_get_settings, mock_settings, tmp_path
     ):
@@ -760,8 +760,8 @@ class TestApiClientFileAndVector:
             "X-Task-Secret": "secret-1",
         }
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_embeddings_parses_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -785,8 +785,8 @@ class TestApiClientFileAndVector:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_get_token_counts_serializes_text_request(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -810,8 +810,8 @@ class TestApiClientFileAndVector:
             headers={"X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_upsert_points_returns_typed_response_and_serializes_points(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):
@@ -866,8 +866,8 @@ class TestApiClientFileAndVector:
             headers={"X-Task-Id": "task-1", "X-Task-Secret": "secret-1"},
         )
 
-    @patch("services.api_client.get_settings")
-    @patch("services.api_client.requests.Session")
+    @patch("intextum_worker.services.api_client.get_settings")
+    @patch("intextum_worker.services.api_client.requests.Session")
     def test_delete_points_returns_typed_response(
         self, mock_session_cls, mock_get_settings, mock_settings
     ):

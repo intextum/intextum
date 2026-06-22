@@ -14,7 +14,7 @@ AiSettingsInputType = Literal["text", "textarea", "number", "boolean", "json"]
 
 def _catalog_identifier(kind: str, name: str) -> str:
     normalized = name.strip().lower()
-    return uuid5(NAMESPACE_URL, f"dms:{kind}:{normalized}").hex
+    return uuid5(NAMESPACE_URL, f"intextum:{kind}:{normalized}").hex
 
 
 class DocumentClassificationLabelInput(BaseModel):

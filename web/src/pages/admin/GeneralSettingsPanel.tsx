@@ -76,7 +76,7 @@ export function GeneralSettingsPanel() {
             id="public-base-url"
             type="url"
             inputMode="url"
-            placeholder={configDefault ?? "https://dms.example.org"}
+            placeholder={configDefault ?? "https://intextum.example.org"}
             value={publicBaseUrl}
             onChange={(event) => setPublicBaseUrl(event.target.value)}
             disabled={isLoading}

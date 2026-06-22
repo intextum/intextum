@@ -76,7 +76,7 @@ export const de = {
     },
     shortcuts: {
       title: "Tastenkürzel",
-      description: "Schnelle Aktionen zum Navigieren im DMS.",
+      description: "Schnelle Aktionen zum Navigieren in Intextum.",
       items: {
         command_palette: "Befehlspalette öffnen",
         focus_search: "Suche oder Filter fokussieren",
@@ -137,7 +137,7 @@ export const de = {
       },
     },
     login: {
-      product: "intextum DMS",
+      product: "Intextum",
       workspace_badge: "Dokumentenarbeitsplatz",
       title: "Am Arbeitsbereich anmelden",
       description: "Greifen Sie sicher auf indexierte Dokumente, Chat und Administration zu.",
@@ -782,7 +782,7 @@ export const de = {
           description: "Anwendungsweite Einstellungen.",
           public_url_label: "Öffentliche URL",
           public_url_help:
-            "Die öffentliche Basis-URL, unter der die Anwendung erreichbar ist (z. B. https://dms.example.org). Wird verwendet, um die API-URL zu bilden, mit der sich Worker verbinden. Leer lassen, um die aktuelle Adresse des Browsers zu verwenden.",
+            "Die öffentliche Basis-URL, unter der die Anwendung erreichbar ist (z. B. https://intextum.example.org). Wird verwendet, um die API-URL zu bilden, mit der sich Worker verbinden. Leer lassen, um die aktuelle Adresse des Browsers zu verwenden.",
           config_default_hint: "Verwendet den serverseitig konfigurierten Standard: %{url}",
           save: "Speichern",
           saving: "Speichern…",

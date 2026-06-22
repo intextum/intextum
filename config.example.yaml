@@ -11,7 +11,7 @@
 # Public base URL the app is reachable at (scheme + host, no trailing slash).
 # Used to build the API URL that workers connect to. An admin value set in the
 # General settings UI overrides this.
-# public_base_url: https://dms.example.org
+# public_base_url: https://intextum.example.org
 # valkey_url: redis://valkey:6379/0
 # cors_allow_origins: "http://your-domain.example,http://localhost:5173"
 
@@ -23,8 +23,8 @@
 # --- Database ---
 # postgres_user: postgres
 # postgres_password: postgres
-# postgres_app_user: dms_app
-# postgres_app_password: dms_app
+# postgres_app_user: intextum_app
+# postgres_app_password: intextum_app
 # postgres_db: intextum_db
 # postgres_host: postgres
 # postgres_port: 5432

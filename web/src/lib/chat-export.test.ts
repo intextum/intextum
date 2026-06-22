@@ -22,7 +22,7 @@ const labels = {
   verificationHeading: "Verification notes",
 };
 const exportUrlOptions = {
-  absoluteBaseUrl: "https://dms.example.test",
+  absoluteBaseUrl: "https://intextum.example.test",
 };
 
 test("buildAssistantResponseExportDocument adds a title and sources section", () => {
@@ -51,7 +51,7 @@ test("buildAssistantResponseExportDocument adds a title and sources section", ()
   assert.match(document.markdown, /## Sources/);
   assert.match(
     document.markdown,
-    /- \[1\] Retention Report: \[docs\/report\.pdf\]\(https:\/\/dms\.example\.test\/api\/content\/preview\/docs%2Freport\.pdf\) \(pages 4\)/,
+    /- \[1\] Retention Report: \[docs\/report\.pdf\]\(https:\/\/intextum\.example\.test\/api\/content\/preview\/docs%2Freport\.pdf\) \(pages 4\)/,
   );
   assert.match(document.markdown, /> Retention improved after the program\./);
 });
@@ -83,7 +83,7 @@ test("buildAssistantResponseExportDocument rewrites inline file links to absolut
 
   assert.match(
     document.markdown,
-    /\[Retention Report\]\(https:\/\/dms\.example\.test\/api\/content\/preview\/docs%2Freport\.pdf\)/,
+    /\[Retention Report\]\(https:\/\/intextum\.example\.test\/api\/content\/preview\/docs%2Freport\.pdf\)/,
   );
 });
 
@@ -129,16 +129,16 @@ test("buildResearchResponseExportDocument keeps report markdown and appends extr
   assert.equal(document.markdown.match(/^## Sources$/gm)?.length, 1);
   assert.match(
     document.markdown,
-    /- \[1\] Program Review: \[docs\/program\.pdf\]\(https:\/\/dms\.example\.test\/api\/content\/preview\/docs%2Fprogram\.pdf\) \(pages 3\)/,
+    /- \[1\] Program Review: \[docs\/program\.pdf\]\(https:\/\/intextum\.example\.test\/api\/content\/preview\/docs%2Fprogram\.pdf\) \(pages 3\)/,
   );
   assert.match(document.markdown, /## Images/);
   assert.match(
     document.markdown,
-    /- \[1\] \[Chart\]\(https:\/\/dms\.example\.test\/api\/content\/extracted-asset\/file-1\/chart\.png\)/,
+    /- \[1\] \[Chart\]\(https:\/\/intextum\.example\.test\/api\/content\/extracted-asset\/file-1\/chart\.png\)/,
   );
   assert.match(
     document.markdown,
-    /!\[Chart\]\(https:\/\/dms\.example\.test\/api\/content\/extracted-asset\/file-1\/chart\.png\)/,
+    /!\[Chart\]\(https:\/\/intextum\.example\.test\/api\/content\/extracted-asset\/file-1\/chart\.png\)/,
   );
   assert.match(document.markdown, /## Verification notes/);
   assert.match(
@@ -172,11 +172,11 @@ test("buildResearchResponseExportDocument rewrites inline markdown URLs before e
 
   assert.match(
     document.markdown,
-    /\[Report\]\(https:\/\/dms\.example\.test\/api\/content\/preview\/docs%2Flinked\.pdf\)/,
+    /\[Report\]\(https:\/\/intextum\.example\.test\/api\/content\/preview\/docs%2Flinked\.pdf\)/,
   );
   assert.match(
     document.markdown,
-    /!\[Chart\]\(https:\/\/dms\.example\.test\/api\/content\/extracted-asset\/file-1\/chart\.png\)/,
+    /!\[Chart\]\(https:\/\/intextum\.example\.test\/api\/content\/extracted-asset\/file-1\/chart\.png\)/,
   );
 });
 
@@ -185,16 +185,16 @@ test("extractMarkdownEmbeddedImages returns unique image references in order", (
     [
       "## Images",
       "",
-      "- [1] [Chart](https://dms.example.test/chart.png)",
-      "  ![Chart](https://dms.example.test/chart.png)",
-      "  ![Chart](https://dms.example.test/chart.png)",
-      "  ![Appendix](https://dms.example.test/appendix.png)",
+      "- [1] [Chart](https://intextum.example.test/chart.png)",
+      "  ![Chart](https://intextum.example.test/chart.png)",
+      "  ![Chart](https://intextum.example.test/chart.png)",
+      "  ![Appendix](https://intextum.example.test/appendix.png)",
     ].join("\n"),
   );
 
   assert.deepEqual(references, [
-    { altText: "Chart", url: "https://dms.example.test/chart.png" },
-    { altText: "Appendix", url: "https://dms.example.test/appendix.png" },
+    { altText: "Chart", url: "https://intextum.example.test/chart.png" },
+    { altText: "Appendix", url: "https://intextum.example.test/appendix.png" },
   ]);
 });
 
@@ -283,13 +283,13 @@ test("buildConversationExportDocument assembles user, assistant, and research tr
   assert.match(document.markdown, /^## Context files$/m);
   assert.match(
     document.markdown,
-    /- \[docs\/program\.pdf\]\(https:\/\/dms\.example\.test\/api\/content\/preview\/docs%2Fprogram\.pdf\)/,
+    /- \[docs\/program\.pdf\]\(https:\/\/intextum\.example\.test\/api\/content\/preview\/docs%2Fprogram\.pdf\)/,
   );
   assert.match(document.markdown, /^## Assistant 2$/m);
   assert.match(document.markdown, /I reviewed the report \[1\]\./);
   assert.match(
     document.markdown,
-    /- \[1\] Program Review: \[docs\/program\.pdf\]\(https:\/\/dms\.example\.test\/api\/content\/preview\/docs%2Fprogram\.pdf\) \(pages 3\)/,
+    /- \[1\] Program Review: \[docs\/program\.pdf\]\(https:\/\/intextum\.example\.test\/api\/content\/preview\/docs%2Fprogram\.pdf\) \(pages 3\)/,
   );
   assert.match(document.markdown, /^## Assistant 3$/m);
   assert.match(document.markdown, /^### Program Review$/m);

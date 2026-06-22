@@ -45,8 +45,8 @@ def upgrade() -> None:
     op.execute((_SQL_DIR / "010_helpers.sql").read_text())
     op.execute((_SQL_DIR / "020_policies.sql").read_text())
 
-    app_user = os.getenv("POSTGRES_APP_USER", "dms_app")
-    app_password = os.getenv("POSTGRES_APP_PASSWORD", "dms_app")
+    app_user = os.getenv("POSTGRES_APP_USER", "intextum_app")
+    app_password = os.getenv("POSTGRES_APP_PASSWORD", "intextum_app")
     role_sql = (
         (_SQL_DIR / "030_app_role.sql.tpl")
         .read_text()

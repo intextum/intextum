@@ -1,6 +1,6 @@
 """Verify the runtime app role cannot bypass RLS through privilege escalation.
 
-The whole RLS design rests on the assumption that ``dms_app`` (the runtime
+The whole RLS design rests on the assumption that ``intextum_app`` (the runtime
 role) is not a superuser, does not own the protected tables, and cannot
 disable policies or escalate to the owner. If any of these become false,
 RLS becomes advisory.

@@ -11,10 +11,12 @@ from services.general_settings import GeneralSettingsService, _normalize_base_ur
 
 def test_normalize_base_url_trims_and_clears():
     assert (
-        _normalize_base_url("  https://dms.example.org/  ") == "https://dms.example.org"
+        _normalize_base_url("  https://intextum.example.org/  ")
+        == "https://intextum.example.org"
     )
     assert (
-        _normalize_base_url("https://dms.example.org///") == "https://dms.example.org"
+        _normalize_base_url("https://intextum.example.org///")
+        == "https://intextum.example.org"
     )
     assert _normalize_base_url("") is None
     assert _normalize_base_url(None) is None
@@ -56,27 +58,27 @@ def test_get_general_settings_returns_configured_value(test_client):
     with patch(
         "routers.admin.general_settings.GeneralSettingsService.get_settings",
         new=AsyncMock(
-            return_value=GeneralSettings(public_base_url="https://dms.example.org")
+            return_value=GeneralSettings(public_base_url="https://intextum.example.org")
         ),
     ):
         response = test_client.get("/api/general-settings")
 
     assert response.status_code == 200
-    assert response.json()["public_base_url"] == "https://dms.example.org"
+    assert response.json()["public_base_url"] == "https://intextum.example.org"
 
 
 def test_update_general_settings_persists_normalized_value(test_client):
     with patch(
         "routers.admin.general_settings.GeneralSettingsService.update_settings",
         new=AsyncMock(
-            return_value=GeneralSettings(public_base_url="https://dms.example.org")
+            return_value=GeneralSettings(public_base_url="https://intextum.example.org")
         ),
     ) as update_settings:
         response = test_client.put(
             "/api/general-settings",
-            json={"public_base_url": "https://dms.example.org/"},
+            json={"public_base_url": "https://intextum.example.org/"},
         )
 
     assert response.status_code == 200
-    assert response.json()["public_base_url"] == "https://dms.example.org"
+    assert response.json()["public_base_url"] == "https://intextum.example.org"
     assert update_settings.await_count == 1

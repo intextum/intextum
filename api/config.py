@@ -201,7 +201,7 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
 
     # Public base URL the app is reachable at (scheme + host, no trailing slash),
-    # e.g. https://dms.example.org. Used to build the API URL workers connect to.
+    # e.g. https://intextum.example.org. Used to build the API URL workers connect to.
     # An admin-set value in the General settings UI overrides this.
     PUBLIC_BASE_URL: str = ""
 
@@ -222,8 +222,8 @@ class Settings(BaseSettings):
     # Database
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_APP_USER: str = "dms_app"
-    POSTGRES_APP_PASSWORD: str = "dms_app"
+    POSTGRES_APP_USER: str = "intextum_app"
+    POSTGRES_APP_PASSWORD: str = "intextum_app"
     POSTGRES_DB: str = "intextum_db"
     POSTGRES_HOST: str = "postgres"
     POSTGRES_PORT: int = 5432
@@ -576,7 +576,7 @@ def collect_production_config_errors(settings: object) -> list[str]:
         errors.append("POSTGRES_PASSWORD must be set to a non-default value")
 
     app_password = str(getattr(settings, "POSTGRES_APP_PASSWORD", "")).strip()
-    if not app_password or app_password == "dms_app":
+    if not app_password or app_password == "intextum_app":
         errors.append("POSTGRES_APP_PASSWORD must be set to a non-default value")
 
     return errors

@@ -13,7 +13,7 @@ from version import get_app_version
 def test_install_info_returns_package_version_and_platforms(test_client):
     with patch(
         "routers.workers.GeneralSettingsService.get_public_base_url",
-        new=AsyncMock(return_value="https://dms.example.org"),
+        new=AsyncMock(return_value="https://intextum.example.org"),
     ):
         response = test_client.get("/api/workers/install-info")
 
@@ -24,7 +24,7 @@ def test_install_info_returns_package_version_and_platforms(test_client):
     assert payload["version"] == get_app_version()
     assert payload["default_capabilities"] == "document,video,image"
     # The configured public base URL is surfaced for the install command.
-    assert payload["public_url"] == "https://dms.example.org"
+    assert payload["public_url"] == "https://intextum.example.org"
 
     platforms = {p["id"]: p for p in payload["platforms"]}
     assert set(platforms) == {

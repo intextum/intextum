@@ -76,7 +76,7 @@ export const en = {
     },
     shortcuts: {
       title: "Keyboard shortcuts",
-      description: "Quick actions for moving through the DMS.",
+      description: "Quick actions for moving through Intextum.",
       items: {
         command_palette: "Open command palette",
         focus_search: "Focus search or filter",
@@ -137,7 +137,7 @@ export const en = {
       },
     },
     login: {
-      product: "intextum DMS",
+      product: "Intextum",
       workspace_badge: "Document workspace",
       title: "Sign in to your workspace",
       description: "Access indexed documents, chat, and administration from one secure workspace.",
@@ -792,7 +792,7 @@ export const en = {
           description: "App-wide settings.",
           public_url_label: "Public URL",
           public_url_help:
-            "The public base URL the app is reachable at (e.g. https://dms.example.org). Used to build the API URL workers connect to. Leave empty to use the browser's current address.",
+            "The public base URL the app is reachable at (e.g. https://intextum.example.org). Used to build the API URL workers connect to. Leave empty to use the browser's current address.",
           config_default_hint: "Using the server-configured default: %{url}",
           save: "Save",
           saving: "Saving…",

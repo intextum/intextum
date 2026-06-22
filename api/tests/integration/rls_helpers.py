@@ -24,8 +24,8 @@ ProcessTaskState = Literal["PENDING", "CLAIMED", "COMPLETED"]
 def async_app_url(*, database: str) -> str:
     return URL.create(
         drivername="postgresql+asyncpg",
-        username=os.environ.get("POSTGRES_APP_USER", "dms_app"),
-        password=os.environ.get("POSTGRES_APP_PASSWORD", "dms_app"),
+        username=os.environ.get("POSTGRES_APP_USER", "intextum_app"),
+        password=os.environ.get("POSTGRES_APP_PASSWORD", "intextum_app"),
         host=os.environ.get("POSTGRES_HOST", "localhost"),
         port=int(os.environ.get("POSTGRES_PORT", "5432")),
         database=database,

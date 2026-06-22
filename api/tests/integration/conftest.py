@@ -27,8 +27,8 @@ def _owner_conninfo(*, database: str = "postgres") -> str:
 def _app_conninfo(*, database: str) -> str:
     host = os.environ.get("POSTGRES_HOST", "localhost")
     port = os.environ.get("POSTGRES_PORT", "5432")
-    user = os.environ.get("POSTGRES_APP_USER", "dms_app")
-    password = os.environ.get("POSTGRES_APP_PASSWORD", "dms_app")
+    user = os.environ.get("POSTGRES_APP_USER", "intextum_app")
+    password = os.environ.get("POSTGRES_APP_PASSWORD", "intextum_app")
     return f"host={host} port={port} dbname={database} user={user} password={password}"
 
 
@@ -54,8 +54,10 @@ def _upgrade_database(database: str) -> None:
     with _temporary_env(
         {
             "POSTGRES_DB": database,
-            "POSTGRES_APP_USER": os.environ.get("POSTGRES_APP_USER", "dms_app"),
-            "POSTGRES_APP_PASSWORD": os.environ.get("POSTGRES_APP_PASSWORD", "dms_app"),
+            "POSTGRES_APP_USER": os.environ.get("POSTGRES_APP_USER", "intextum_app"),
+            "POSTGRES_APP_PASSWORD": os.environ.get(
+                "POSTGRES_APP_PASSWORD", "intextum_app"
+            ),
         }
     ):
         cfg = Config(str(_backend_root() / "alembic.ini"))
@@ -115,8 +117,8 @@ def integration_environment(request):
     os.environ.setdefault("POSTGRES_USER", "postgres")
     os.environ.setdefault("POSTGRES_PASSWORD", "postgres")
     os.environ.setdefault("POSTGRES_DB", "intextum_db")
-    os.environ.setdefault("POSTGRES_APP_USER", "dms_app")
-    os.environ.setdefault("POSTGRES_APP_PASSWORD", "dms_app")
+    os.environ.setdefault("POSTGRES_APP_USER", "intextum_app")
+    os.environ.setdefault("POSTGRES_APP_PASSWORD", "intextum_app")
 
     if not use_external_postgres:
         docker_ip = request.getfixturevalue("docker_ip")
@@ -151,8 +153,10 @@ def rls_database(integration_environment):
 
     env = {
         "POSTGRES_DB": database,
-        "POSTGRES_APP_USER": os.environ.get("POSTGRES_APP_USER", "dms_app"),
-        "POSTGRES_APP_PASSWORD": os.environ.get("POSTGRES_APP_PASSWORD", "dms_app"),
+        "POSTGRES_APP_USER": os.environ.get("POSTGRES_APP_USER", "intextum_app"),
+        "POSTGRES_APP_PASSWORD": os.environ.get(
+            "POSTGRES_APP_PASSWORD", "intextum_app"
+        ),
     }
     try:
         with _temporary_env(env):

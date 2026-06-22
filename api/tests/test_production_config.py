@@ -38,7 +38,7 @@ def test_development_mode_does_not_report_production_errors():
         AUTH_DEV_ENABLED=True,
         CORS_ALLOW_ORIGINS=[],
         ENCRYPTION_KEY="",
-        POSTGRES_APP_PASSWORD="dms_app",
+        POSTGRES_APP_PASSWORD="intextum_app",
         POSTGRES_PASSWORD="postgres",
         VALKEY_URL="",
     )
@@ -72,7 +72,7 @@ def test_production_validation_collects_unsafe_defaults():
         AUTH_SESSION_SECURE_COOKIE=False,
         CORS_ALLOW_ORIGINS=["*"],
         ENCRYPTION_KEY="",
-        POSTGRES_APP_PASSWORD="dms_app",
+        POSTGRES_APP_PASSWORD="intextum_app",
         POSTGRES_PASSWORD="postgres",
         VALKEY_URL="",
     )

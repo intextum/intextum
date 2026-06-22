@@ -150,6 +150,10 @@ interface ContentListTableProps {
   onFileClick?: (file: ContentItemInfo) => void;
   onFolderClick?: (path: string) => void;
   onProcess?: (path: string) => void;
+  /** Custom trailing actions for a file row (replaces the default process button). */
+  renderFileActions?: (file: ContentItemInfo) => ReactNode;
+  /** Custom trailing actions for a folder row. */
+  renderFolderActions?: (folder: FolderInfo) => ReactNode;
   selectedFilePaths?: ReadonlySet<string>;
   onToggleFileSelection?: (path: string, selected: boolean) => void;
   onToggleVisibleFileSelection?: (selected: boolean) => void;
@@ -169,6 +173,8 @@ export function ContentListTable({
   onFileClick,
   onFolderClick,
   onProcess,
+  renderFileActions,
+  renderFolderActions,
   selectedFilePaths,
   onToggleFileSelection,
   onToggleVisibleFileSelection,
@@ -208,11 +214,18 @@ export function ContentListTable({
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <div className="divide-y md:hidden">
         {folders.map((folder) => (
-          <button
+          <div
             key={`folder-card-${folder.id}`}
-            type="button"
-            className="flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50"
+            role="button"
+            tabIndex={0}
+            className="flex w-full items-start gap-3 p-3 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50"
             onClick={() => onFolderClick?.(folder.path)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onFolderClick?.(folder.path);
+              }
+            }}
           >
             <Folder className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1">
@@ -226,8 +239,14 @@ export function ContentListTable({
                 <span>{formatDate(folder.modified_at)}</span>
               </span>
             </span>
-            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
+            {renderFolderActions ? (
+              <span className="shrink-0" onClick={(event) => event.stopPropagation()}>
+                {renderFolderActions(folder)}
+              </span>
+            ) : (
+              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </div>
         ))}
         {selectionEnabled && files.length > 0 && (
           <div className="flex items-center gap-3 p-3 text-sm text-muted-foreground">
@@ -315,19 +334,26 @@ export function ContentListTable({
                   </div>
                 )}
               </div>
-              {onProcess && !rowModel.isProcessing && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 shrink-0"
-                  aria-label={processTooltip}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onProcess(file.path);
-                  }}
-                >
-                  <Play className="h-3.5 w-3.5" />
-                </Button>
+              {renderFileActions ? (
+                <span className="shrink-0" onClick={(event) => event.stopPropagation()}>
+                  {renderFileActions(file)}
+                </span>
+              ) : (
+                onProcess &&
+                !rowModel.isProcessing && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 shrink-0"
+                    aria-label={processTooltip}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onProcess(file.path);
+                    }}
+                  >
+                    <Play className="h-3.5 w-3.5" />
+                  </Button>
+                )
               )}
             </div>
           );
@@ -413,7 +439,13 @@ export function ContentListTable({
                   </Badge>
                 </TableCell>
                 <TableCell />
-                <TableCell />
+                <TableCell className="text-right">
+                  {renderFolderActions && (
+                    <span onClick={(event) => event.stopPropagation()}>
+                      {renderFolderActions(folder)}
+                    </span>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
             {files.map((file) => {
@@ -498,25 +530,32 @@ export function ContentListTable({
                     <StatusBadge status={rowModel.visibleStatus ?? undefined} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {onProcess && !rowModel.isProcessing && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onProcess(file.path);
-                            }}
-                          >
-                            <Play className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{processTooltip}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                    {renderFileActions ? (
+                      <span onClick={(event) => event.stopPropagation()}>
+                        {renderFileActions(file)}
+                      </span>
+                    ) : (
+                      onProcess &&
+                      !rowModel.isProcessing && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onProcess(file.path);
+                              }}
+                            >
+                              <Play className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{processTooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
                     )}
                   </TableCell>
                 </TableRow>

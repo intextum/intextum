@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslate } from "@/lib/app-context";
 
@@ -18,6 +18,7 @@ import {
   type ContentEnrichmentReviewStatus,
   type ContentItemInfo,
   type ContentItemKind,
+  type FolderInfo,
 } from "@/dataProvider";
 import {
   buildDocumentClassFilterChips,
@@ -59,6 +60,15 @@ export interface ContentListViewProps {
     processingConfig?: ProcessingConfigPayload,
   ) => void | Promise<void>;
   refreshKey?: number;
+  /** Custom trailing actions per file row (e.g. an "add to context" button). */
+  renderFileActions?: (file: ContentItemInfo) => ReactNode;
+  /** Custom trailing actions per folder row. */
+  renderFolderActions?: (folder: FolderInfo) => ReactNode;
+  /**
+   * Replaces the default processing batch bar with a custom one (e.g. "add
+   * selected"). Rendered only while at least one row is selected.
+   */
+  renderSelectionBar?: (args: { selectedPaths: string[]; clearSelection: () => void }) => ReactNode;
 }
 
 export function ContentListView({
@@ -90,6 +100,9 @@ export function ContentListView({
   onReviewStatusFilterChange,
   onProcessSelected,
   refreshKey,
+  renderFileActions,
+  renderFolderActions,
+  renderSelectionBar,
 }: ContentListViewProps) {
   const translate = useTranslate();
   const [selectedFilePaths, setSelectedFilePaths] = useState<Set<string>>(() => new Set());
@@ -337,18 +350,26 @@ export function ContentListView({
         onToggleStaleOnly={handleToggleStaleOnly}
       />
 
-      <ContentListBatchActionBar
-        isLoading={visibleIsLoading}
-        selectedCount={selectedFilePathList.length}
-        selectedCountLabel={translate("custom.content.selection.count", {
-          count: selectedFilePathList.length,
-        })}
-        clearSelectionLabel={translate("custom.content.selection.clear")}
-        processSelectedLabel={translate("custom.content.actions.process_selected")}
-        selectedFilePaths={selectedFilePathList}
-        onProcessSelected={onProcessSelected ? handleProcessSelected : undefined}
-        onClearSelection={handleClearSelection}
-      />
+      {renderSelectionBar ? (
+        selectedFilePathList.length > 0 &&
+        renderSelectionBar({
+          selectedPaths: selectedFilePathList,
+          clearSelection: handleClearSelection,
+        })
+      ) : (
+        <ContentListBatchActionBar
+          isLoading={visibleIsLoading}
+          selectedCount={selectedFilePathList.length}
+          selectedCountLabel={translate("custom.content.selection.count", {
+            count: selectedFilePathList.length,
+          })}
+          clearSelectionLabel={translate("custom.content.selection.clear")}
+          processSelectedLabel={translate("custom.content.actions.process_selected")}
+          selectedFilePaths={selectedFilePathList}
+          onProcessSelected={onProcessSelected ? handleProcessSelected : undefined}
+          onClearSelection={handleClearSelection}
+        />
+      )}
 
       <ContentListTable
         t={t}
@@ -364,6 +385,8 @@ export function ContentListView({
         onFileClick={onFileClick}
         onFolderClick={onNavigate}
         onProcess={onProcess}
+        renderFileActions={renderFileActions}
+        renderFolderActions={renderFolderActions}
         selectedFilePaths={selectedFilePaths}
         onToggleFileSelection={handleToggleFileSelection}
         onToggleVisibleFileSelection={handleToggleVisibleFileSelection}

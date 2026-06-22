@@ -132,7 +132,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Lists root directory contents."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -154,7 +153,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Lists subdirectory contents."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -172,7 +170,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Browsing a watched connector should still trigger reconcile on demand."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with patch("services.content.service.get_settings", return_value=mock_settings):
             service = ContentService(db=mock_db)
@@ -193,7 +190,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Browsing should recover when this process has a stale connector cache."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
         folder = mock_settings.DATA_FOLDERS[0]
         connector_registry.set_connectors([])
 
@@ -223,7 +219,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Excludes hidden files by default."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -239,7 +234,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Includes hidden files when requested."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -255,7 +249,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Raises FileNotFoundError for non-existent directory."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -269,7 +262,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Prevents directory traversal attacks."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         # Create a directory that would allow traversal
         escape_dir = populated_data_dir / "subdir"
@@ -286,7 +278,6 @@ class TestContentService:
     @pytest.mark.asyncio
     async def test_get_file_tree(self, populated_data_dir, mock_settings, mock_db):
         """Gets file tree with specified depth."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -488,7 +479,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Tree nodes have folders before files."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -511,7 +501,6 @@ class TestContentService:
     @pytest.mark.asyncio
     async def test_get_file_details(self, populated_data_dir, mock_settings, mock_db):
         """Gets detailed file information."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -527,7 +516,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Indexed metadata should still open content details when adapter lookup misses."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
         record = IndexedContentItem(
             content_item_id="file-1",
             folder_uuid="folder-documents",
@@ -619,7 +607,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Detailed file payload includes queue metadata for the active task."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
         record = IndexedContentItem(
             content_item_id="file-1",
             folder_uuid="folder-documents",
@@ -733,7 +720,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Raises FileNotFoundError for non-existent file."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -747,7 +733,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """Raises ValueError when path is a directory."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),
@@ -763,7 +748,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """File info includes ACL information when enabled."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
         mock_settings.ACL_ENABLED = True
 
         with (
@@ -778,7 +762,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """File info excludes ACL when disabled."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
         mock_settings.ACL_ENABLED = False
 
         with (
@@ -793,7 +776,6 @@ class TestContentService:
         self, populated_data_dir, mock_settings, mock_db
     ):
         """File IDs are stable across calls."""
-        mock_settings.DATA_VOLUME = str(populated_data_dir)
 
         with (
             patch("services.content.service.get_settings", return_value=mock_settings),

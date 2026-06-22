@@ -16,7 +16,6 @@
 # cors_allow_origins: "http://your-domain.example,http://localhost:5173"
 
 # --- File System ---
-# data_volume: /data
 # extracted_data_dir: /extracted
 # model_artifacts_dir: /model-artifacts
 # db_dir: /app/data

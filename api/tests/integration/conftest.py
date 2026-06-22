@@ -99,7 +99,7 @@ def docker_compose_file():
 
 
 @pytest.fixture(scope="session")
-def integration_environment(request, tmp_path_factory):
+def integration_environment(request):
     """Configure runtime env for integration tests and verify dependencies are up."""
     if os.environ.get("INTEXTUM_RUN_INTEGRATION") != "1":
         pytest.skip(
@@ -110,7 +110,6 @@ def integration_environment(request, tmp_path_factory):
     use_external_postgres = any(
         key in os.environ for key in ("POSTGRES_HOST", "POSTGRES_PORT")
     )
-    data_root = tmp_path_factory.mktemp("integration-data")
     os.environ["CONFIG_FILE"] = ""
     os.environ["OPENAI_API_KEY"] = "test"
     os.environ.setdefault("POSTGRES_USER", "postgres")
@@ -118,7 +117,6 @@ def integration_environment(request, tmp_path_factory):
     os.environ.setdefault("POSTGRES_DB", "intextum_db")
     os.environ.setdefault("POSTGRES_APP_USER", "dms_app")
     os.environ.setdefault("POSTGRES_APP_PASSWORD", "dms_app")
-    os.environ["DATA_VOLUME"] = str(data_root)
 
     if not use_external_postgres:
         docker_ip = request.getfixturevalue("docker_ip")

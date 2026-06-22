@@ -36,7 +36,6 @@ class YamlSettingsSource:
     FIELD_MAP: dict[str, str] = {
         "cors_allow_origins": "CORS_ALLOW_ORIGINS_STR",
         "app_env": "APP_ENV",
-        "data_volume": "DATA_VOLUME",
         "extracted_data_dir": "EXTRACTED_DATA_DIR",
         "model_artifacts_dir": "MODEL_ARTIFACTS_DIR",
         "postgres_user": "POSTGRES_USER",
@@ -217,7 +216,6 @@ class Settings(BaseSettings):
     )
 
     # File System
-    DATA_VOLUME: str = "/data"
     EXTRACTED_DATA_DIR: str = "/extracted"
     MODEL_ARTIFACTS_DIR: str = "/model-artifacts"
 

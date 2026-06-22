@@ -102,7 +102,7 @@ def mock_settings(temp_data_dir):
 
     class _Settings:
         def __init__(self, base_dir: Path):
-            self.DATA_VOLUME = str(base_dir)
+            self.TEST_DATA_ROOT = base_dir
             self.EMBEDDING_API_BASE = "http://localhost:11434/v1"
             self.EMBEDDING_API_KEY = "test-embedding-key"
             self.EMBEDDING_MODEL = "test-embedding-model"
@@ -218,19 +218,18 @@ def mock_settings(temp_data_dir):
 
         @property
         def DATA_FOLDERS(self):
-            base = Path(self.DATA_VOLUME)
             return [
                 LocalFsDataConnector(
                     uuid="folder-documents",
                     name="documents",
-                    path=str(base / "documents"),
+                    path=str(self.TEST_DATA_ROOT / "documents"),
                     watch=True,
                     auto_process_new=True,
                 ),
                 LocalFsDataConnector(
                     uuid="folder-images",
                     name="images",
-                    path=str(base / "images"),
+                    path=str(self.TEST_DATA_ROOT / "images"),
                     watch=True,
                     auto_process_new=True,
                 ),
@@ -285,7 +284,7 @@ def admin_user():
 @pytest.fixture
 def test_client(mock_get_settings, populated_data_dir):
     """Create a test client with mocked dependencies."""
-    mock_get_settings.DATA_VOLUME = str(populated_data_dir)
+    mock_get_settings.TEST_DATA_ROOT = populated_data_dir
     connector_registry.set_connectors(list(mock_get_settings.DATA_FOLDERS))
 
     mock_watcher = MagicMock()

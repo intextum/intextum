@@ -134,3 +134,4 @@
 # --- Upload Limits ---
 # max_upload_file_size_bytes: 52428800
 # max_upload_batch_size_bytes: 209715200
+# max_model_artifact_upload_size_bytes: 536870912

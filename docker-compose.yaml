@@ -89,8 +89,10 @@ services:
       context: ./web
     volumes:
       - ./VERSION:/VERSION:ro
+      - ./config.yaml:/config/config.yaml:ro
     environment:
       APP_VERSION: *app_version
+      CONFIG_FILE: /config/config.yaml
       APP_BRAND_TITLE: ${APP_BRAND_TITLE:-Intextum}
       # No subtitle default: the UI shows the version when this is unset.
       APP_BRAND_SUBTITLE: ${APP_BRAND_SUBTITLE:-}

@@ -37,6 +37,7 @@ export const queryKeys = {
     all: ["workers"] as const,
     list: ["workers", "list"] as const,
     tasks: (params: unknown) => ["workers", "tasks", params] as const,
+    installInfo: ["workers", "install-info"] as const,
   },
   settings: {
     ai: ["settings", "ai"] as const,
@@ -46,6 +47,7 @@ export const queryKeys = {
   admin: {
     all: ["admin"] as const,
     promptPresets: ["admin", "prompt-presets"] as const,
+    generalSettings: ["admin", "general-settings"] as const,
   },
 };
 
@@ -57,3 +59,6 @@ export const invalidateConversationQueries = () =>
 
 export const invalidateNotificationPreferenceQueries = () =>
   queryClient.invalidateQueries({ queryKey: queryKeys.settings.notificationPreferences });
+
+export const invalidateWorkerInstallInfo = () =>
+  queryClient.invalidateQueries({ queryKey: queryKeys.workers.installInfo });

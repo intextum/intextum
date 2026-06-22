@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNotify, useTranslate } from "@/lib/app-context";
 import { generalSettingsApi } from "@/dataProvider";
+import { invalidateWorkerInstallInfo, queryKeys } from "@/lib/query-client";
 
 export function GeneralSettingsPanel() {
   const translate = useTranslate();
@@ -16,7 +17,7 @@ export function GeneralSettingsPanel() {
   const [saving, setSaving] = useState(false);
 
   const settingsQuery = useQuery({
-    queryKey: ["admin", "general-settings"],
+    queryKey: queryKeys.admin.generalSettings,
     queryFn: generalSettingsApi.get,
   });
   const { data, isLoading, error, refetch } = settingsQuery;
@@ -38,6 +39,9 @@ export function GeneralSettingsPanel() {
     try {
       await generalSettingsApi.update({ public_base_url: publicBaseUrl.trim() || null });
       await refetch();
+      // The Add-Worker install command embeds this URL; refresh its cache so a
+      // worker created right after saving uses the new value without a reload.
+      void invalidateWorkerInstallInfo();
       notify(translate("custom.pages.admin.general.saved"), { type: "info" });
     } catch {
       notify(translate("custom.pages.admin.general.save_failed"), { type: "error" });

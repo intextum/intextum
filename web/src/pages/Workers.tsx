@@ -113,7 +113,7 @@ export const WorkersPage = ({ embedded = false }: { embedded?: boolean }) => {
     refetchInterval: tokenOpen ? 3000 : false,
   });
   const installInfoQuery = useQuery({
-    queryKey: ["workers", "install-info"],
+    queryKey: queryKeys.workers.installInfo,
     queryFn: workersApi.installInfo,
     staleTime: Infinity,
   });

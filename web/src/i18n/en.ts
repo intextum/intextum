@@ -138,11 +138,10 @@ export const en = {
     },
     login: {
       product: "Intextum",
-      workspace_badge: "Document workspace",
-      title: "Sign in to your workspace",
-      description: "Access indexed documents, chat, and administration from one secure workspace.",
-      local_hint: "Local accounts use protected sessions",
-      session_hint: "Security checks stay active across requests",
+      workspace_badge: "Document intelligence",
+      title: "Sign in to Intextum",
+      description:
+        "Access indexed documents, chat, review, and administration in one secure place.",
       card_title: "Sign in",
       card_description: "Use your local account or continue with your configured SSO provider.",
       username_or_email: "Username or email",

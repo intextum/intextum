@@ -138,11 +138,10 @@ export const de = {
     },
     login: {
       product: "Intextum",
-      workspace_badge: "Dokumentenarbeitsplatz",
-      title: "Am Arbeitsbereich anmelden",
-      description: "Greifen Sie sicher auf indexierte Dokumente, Chat und Administration zu.",
-      local_hint: "Lokale Konten nutzen geschützte Sitzungen",
-      session_hint: "Sicherheitsprüfungen bleiben aktiv",
+      workspace_badge: "Dokumentenintelligenz",
+      title: "Bei Intextum anmelden",
+      description:
+        "Greifen Sie sicher auf indexierte Dokumente, Chat, Prüfung und Administration zu.",
       card_title: "Anmelden",
       card_description:
         "Nutzen Sie Ihr lokales Konto oder fahren Sie mit dem konfigurierten SSO-Anbieter fort.",

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
 import { useLogin, useNotify, useTranslate } from "@/lib/app-context";
-import { KeyRound, LockKeyhole, Shield, UserRound } from "lucide-react";
+import { KeyRound, Shield } from "lucide-react";
 
 import { getAuthConfig, type AuthProvidersInfo } from "@/authConfig";
 import { LocalesMenuButton } from "@/components/app/locales-menu-button";
@@ -101,16 +101,6 @@ export const LoginPage = (props: { redirectTo?: string }) => {
               <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
                 {translate("custom.login.description")}
               </p>
-            </div>
-            <div className="grid max-w-xl gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-              <div className="flex items-center gap-2">
-                <UserRound className="h-4 w-4 text-foreground" />
-                <span>{translate("custom.login.local_hint")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <LockKeyhole className="h-4 w-4 text-foreground" />
-                <span>{translate("custom.login.session_hint")}</span>
-              </div>
             </div>
           </section>
 

@@ -7,6 +7,7 @@ from sqlalchemy.engine import URL
 from sqlalchemy import pool
 
 from alembic import context
+from config import get_settings
 from models.sqlalchemy_models import Base
 
 # this is the Alembic Config object, which provides
@@ -29,15 +30,12 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    user = os.getenv("POSTGRES_MIGRATION_USER") or os.getenv(
-        "POSTGRES_USER", "postgres"
-    )
-    password = os.getenv("POSTGRES_MIGRATION_PASSWORD") or os.getenv(
-        "POSTGRES_PASSWORD", "postgres"
-    )
-    host = os.getenv("POSTGRES_HOST", "postgres")
-    port = os.getenv("POSTGRES_PORT", "5432")
-    db = os.getenv("POSTGRES_DB", "intextum_db")
+    settings = get_settings()
+    user = os.getenv("POSTGRES_MIGRATION_USER") or settings.POSTGRES_USER
+    password = os.getenv("POSTGRES_MIGRATION_PASSWORD") or settings.POSTGRES_PASSWORD
+    host = settings.POSTGRES_HOST
+    port = settings.POSTGRES_PORT
+    db = settings.POSTGRES_DB
     return URL.create(
         drivername="postgresql",
         username=user,

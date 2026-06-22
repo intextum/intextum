@@ -11,11 +11,11 @@ are not upgrade-compatible and must be recreated.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from alembic import op
 
+from config import get_settings
 from models.sqlalchemy_models import Base
 
 revision = "001"
@@ -45,8 +45,9 @@ def upgrade() -> None:
     op.execute((_SQL_DIR / "010_helpers.sql").read_text())
     op.execute((_SQL_DIR / "020_policies.sql").read_text())
 
-    app_user = os.getenv("POSTGRES_APP_USER", "intextum_app")
-    app_password = os.getenv("POSTGRES_APP_PASSWORD", "intextum_app")
+    settings = get_settings()
+    app_user = settings.POSTGRES_APP_USER
+    app_password = settings.POSTGRES_APP_PASSWORD
     role_sql = (
         (_SQL_DIR / "030_app_role.sql.tpl")
         .read_text()

@@ -69,6 +69,62 @@ def test_all_files_endpoint_passes_document_class_filter_to_service(test_client)
     assert mock_list_all.await_args.kwargs["document_class"] == "invoice"
 
 
+def test_all_files_endpoint_passes_ids_filter_to_service(test_client):
+    """Repeated ``ids`` query params forward to the service as an ordered tuple."""
+    from main import app
+
+    user = User(username="alice", groups=["users"])
+    app.dependency_overrides[require_user] = lambda: user
+    try:
+        with patch(
+            "services.content.stats.ContentStatsService.list_all_files",
+            new=AsyncMock(
+                return_value=FlatContentItemListResponse(
+                    files=[],
+                    total=0,
+                    limit=50,
+                    offset=0,
+                    has_more=False,
+                )
+            ),
+        ) as mock_list_all:
+            response = test_client.get("/api/content/all?ids=abc123&ids=def456")
+    finally:
+        app.dependency_overrides.pop(require_user, None)
+
+    assert response.status_code == 200
+    assert mock_list_all.await_count == 1
+    assert mock_list_all.await_args.kwargs["ids"] == ("abc123", "def456")
+
+
+def test_all_files_endpoint_defaults_ids_filter_to_none(test_client):
+    """Without ``ids`` query params the service receives ``None`` (no id filter)."""
+    from main import app
+
+    user = User(username="alice", groups=["users"])
+    app.dependency_overrides[require_user] = lambda: user
+    try:
+        with patch(
+            "services.content.stats.ContentStatsService.list_all_files",
+            new=AsyncMock(
+                return_value=FlatContentItemListResponse(
+                    files=[],
+                    total=0,
+                    limit=50,
+                    offset=0,
+                    has_more=False,
+                )
+            ),
+        ) as mock_list_all:
+            response = test_client.get("/api/content/all")
+    finally:
+        app.dependency_overrides.pop(require_user, None)
+
+    assert response.status_code == 200
+    assert mock_list_all.await_count == 1
+    assert mock_list_all.await_args.kwargs["ids"] is None
+
+
 def test_all_files_endpoint_passes_search_mode_filters_to_service(test_client):
     """The content-list endpoint should forward regex and path-search options."""
     from main import app

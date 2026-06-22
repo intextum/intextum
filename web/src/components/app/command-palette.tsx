@@ -148,7 +148,7 @@ export function CommandPalette() {
         label: translate("custom.command.actions.search"),
         keywords: "search find",
         value: "nav:search",
-        onSelect: () => navigate("/search"),
+        onSelect: () => navigate("/content?mode=smart"),
       },
       {
         icon: MessageSquarePlus,
@@ -263,7 +263,7 @@ export function CommandPalette() {
         label: query,
         keywords: "recent search query",
         value: `search:${query}`,
-        onSelect: () => navigate(`/search?q=${encodeURIComponent(query)}`),
+        onSelect: () => navigate(`/content?mode=smart&q=${encodeURIComponent(query)}`),
       })),
     [navigate, recentSearchQueries],
   );

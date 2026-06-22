@@ -2,7 +2,7 @@
  * Main application component.
  */
 import { Suspense, lazy, type ComponentType, type LazyExoticComponent } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes, useParams, useSearchParams } from "react-router";
 import { Layout } from "@/components/app/layout";
 import { LoginPage } from "@/components/app/login-page";
 import { RouteErrorBoundary } from "@/components/app/route-error-boundary";
@@ -17,9 +17,6 @@ const ContentItemPage = lazy(async () => ({
 }));
 const ContentItemActivityPage = lazy(async () => ({
   default: (await import("./pages/ContentItemActivity")).ContentItemActivityPage,
-}));
-const SearchPage = lazy(async () => ({
-  default: (await import("./pages/Search")).SearchPage,
 }));
 const ChatPage = lazy(async () => ({
   default: (await import("./pages/Chat")).ChatPage,
@@ -36,6 +33,16 @@ const EnrichmentClassRedirect = () => {
     ? `/admin?tab=content-classes&class=${encodeURIComponent(classId)}`
     : "/admin?tab=content-classes";
   return <Navigate to={target} replace />;
+};
+// The standalone search page is folded into the content list's smart-search mode.
+const SearchRedirect = () => {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get("q")?.trim() ?? "";
+  const target = new URLSearchParams({ mode: "smart" });
+  if (query) {
+    target.set("q", query);
+  }
+  return <Navigate to={`/content?${target.toString()}`} replace />;
 };
 const DashboardPage = lazy(async () => ({
   default: (await import("./pages/Dashboard")).DashboardPage,
@@ -71,7 +78,6 @@ const ContentItemActivityRoutePage = makeSuspendedPage(
   ContentItemActivityPage,
   "content-item-activity",
 );
-const SearchRoutePage = makeSuspendedPage(SearchPage, "search");
 const ChatRoutePage = makeSuspendedPage(ChatPage, "chat");
 const SettingsRoutePage = makeSuspendedPage(SettingsPage, "settings");
 const AdminRoutePage = makeSuspendedPage(AdminPage, "admin");
@@ -92,7 +98,7 @@ const AppRoutes = () => (
       <Route path="/content/item/:id/activity" element={<ContentItemActivityRoutePage />} />
       <Route path="/content/item/:id" element={<ContentItemRoutePage />} />
       <Route path="/review" element={<Navigate to="/content" replace />} />
-      <Route path="/search" element={<SearchRoutePage />} />
+      <Route path="/search" element={<SearchRedirect />} />
       <Route path="/settings" element={<SettingsRoutePage />} />
       <Route
         path="/admin"

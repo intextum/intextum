@@ -82,7 +82,7 @@ export const DashboardPage = () => {
           </Link>
         </Button>
         <Button asChild variant="outline" className="h-auto justify-start gap-3 px-4 py-3">
-          <Link to="/search">
+          <Link to="/content?mode=smart">
             <Search className="h-4 w-4" />
             <span>{translate("custom.pages.dashboard.quick_search")}</span>
           </Link>

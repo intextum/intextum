@@ -245,6 +245,9 @@ class FlatContentListFilters:
     name_contains: str | None = None
     name_regex: bool = False
     search_path: bool = False
+    # Restrict to an explicit set of content item ids (e.g. semantic search hits).
+    # ``None`` means no id filter; an empty tuple intentionally matches nothing.
+    ids: tuple[str, ...] | None = None
     # Folder scope: when set, results are limited to one connector subtree.
     path_folder_uuid: str | None = None
     path_relative_prefix: str = ""
@@ -348,6 +351,8 @@ def scope_filters_to_path(
 
 def apply_flat_filters(stmt, *, filters: FlatContentListFilters, expressions: Any):
     """Apply the reusable flat-file filter set to a SQLAlchemy statement."""
+    if filters.ids is not None:
+        stmt = stmt.where(IndexedContentItem.content_item_id.in_(filters.ids))
     if filters.path_folder_uuid:
         stmt = stmt.where(IndexedContentItem.folder_uuid == filters.path_folder_uuid)
         prefix = filters.path_relative_prefix

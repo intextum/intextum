@@ -41,6 +41,8 @@ export function useContentPageSearchState({
     allFilesExtractionFieldFilter,
     allFilesFieldFilters,
     allFilesReviewStatusFilter,
+    allFilesSearchMode,
+    allFilesInitialQuery,
     pathParts,
     breadcrumbPaths,
   } = readContentPageUrlState(searchParams, forcedViewMode);
@@ -240,6 +242,19 @@ export function useContentPageSearchState({
     [updateSearchParams],
   );
 
+  const handleAllFilesSearchModeChange = useCallback(
+    (mode: "exact" | "smart") => {
+      updateSearchParams((next) => {
+        if (mode === "smart") {
+          next.set("mode", "smart");
+        } else {
+          next.delete("mode");
+        }
+      });
+    },
+    [updateSearchParams],
+  );
+
   const activeSelectedFile = selectedFile?.path === selectedFilePath ? selectedFile : null;
 
   return {
@@ -253,6 +268,8 @@ export function useContentPageSearchState({
     allFilesExtractionFieldFilter,
     allFilesFieldFilters,
     allFilesReviewStatusFilter,
+    allFilesSearchMode,
+    allFilesInitialQuery,
     selectedFile,
     setSelectedFile,
     activeSelectedFile,
@@ -278,5 +295,6 @@ export function useContentPageSearchState({
     handleAllFilesExtractionFieldFilterChange,
     handleAllFilesFieldFiltersChange,
     handleAllFilesReviewStatusFilterChange,
+    handleAllFilesSearchModeChange,
   };
 }

@@ -76,7 +76,7 @@ export function AppShortcuts() {
         }
         if (key === "s") {
           event.preventDefault();
-          navigate("/search");
+          navigate("/content?mode=smart");
           return;
         }
       }

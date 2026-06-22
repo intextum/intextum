@@ -336,6 +336,8 @@ export interface AllFilesBatchFilters {
   name?: string;
   name_regex?: boolean;
   search_path?: boolean;
+  /** Restrict results to these content item ids (e.g. semantic search hits). */
+  ids?: string[];
   /** Folder-prefixed path scoping results to one folder subtree. */
   path?: string;
   content_kind?: ContentItemKind;
@@ -357,6 +359,7 @@ function appendAllFilesBatchFilters(qp: URLSearchParams, params: AllFilesBatchFi
   if (params.name) qp.set("name", params.name);
   if (params.name && params.name_regex) qp.set("name_regex", "true");
   if (params.name && params.search_path) qp.set("search_path", "true");
+  if (params.ids) params.ids.forEach((id) => qp.append("ids", id));
   if (params.path) qp.set("path", params.path);
   if (params.content_kind) qp.set("content_kind", params.content_kind);
   if (params.extension) qp.set("extension", params.extension);

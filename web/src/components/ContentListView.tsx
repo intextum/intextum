@@ -6,9 +6,13 @@ import { ContentListBatchActionBar } from "@/components/content-list/ContentList
 import { ContentListFilterBar } from "@/components/content-list/ContentListFilterBar";
 import { ContentListTable } from "@/components/content-list/ContentListTable";
 import type { SortBy, SortOrder } from "@/components/content-list/types";
-import { useContentListFilters } from "@/components/content-list/useContentListFilters";
+import {
+  useContentListFilters,
+  type ContentListSearchMode,
+} from "@/components/content-list/useContentListFilters";
 import { useContentListFolders } from "@/components/content-list/useContentListFolders";
 import { useContentListListing } from "@/components/content-list/useContentListListing";
+import { useContentListSemanticListing } from "@/components/content-list/useContentListSemanticListing";
 import {
   type AllFilesBatchFilters,
   type ContentEnrichmentReviewStatus,
@@ -40,6 +44,9 @@ export interface ContentListViewProps {
   initialStaleOnly?: boolean;
   initialStatusFilter?: string;
   initialReviewStatusFilter?: ContentEnrichmentReviewStatus | "";
+  initialSearchMode?: ContentListSearchMode;
+  initialNameFilter?: string;
+  onSearchModeChange?: (mode: ContentListSearchMode) => void;
   onDocumentClassFilterChange?: (documentClass: string) => void;
   onExtractionSchemaFilterChange?: (schema: string) => void;
   onExtractionFieldFilterChange?: (field: string) => void;
@@ -71,6 +78,9 @@ export function ContentListView({
   initialStaleOnly = false,
   initialStatusFilter = "",
   initialReviewStatusFilter = "",
+  initialSearchMode = "exact",
+  initialNameFilter = "",
+  onSearchModeChange,
   onDocumentClassFilterChange,
   onExtractionSchemaFilterChange,
   onExtractionFieldFilterChange,
@@ -92,6 +102,9 @@ export function ContentListView({
   const {
     nameFilter,
     setNameFilter,
+    searchMode,
+    setSearchMode,
+    searchQuery,
     nameRegex,
     setNameRegex,
     searchPath,
@@ -135,7 +148,10 @@ export function ContentListView({
     initialStaleOnly,
     initialStatusFilter,
     initialReviewStatusFilter,
+    initialSearchMode,
+    initialNameFilter,
     onActiveFiltersChange,
+    onSearchModeChange,
     onDocumentClassFilterChange,
     onExtractionSchemaFilterChange,
     onExtractionFieldFilterChange,
@@ -145,6 +161,30 @@ export function ContentListView({
     onReviewStatusFilterChange,
   });
 
+  // Smart mode turns the name box into a semantic query handled by a separate,
+  // bounded data path; structural filters still apply on top of the hits.
+  const smartActive = searchMode === "smart" && searchQuery.trim().length > 0;
+  const structuralFilters = useMemo<AllFilesBatchFilters>(() => {
+    const { name, name_regex, search_path, ...rest } = currentBatchFilters;
+    void name;
+    void name_regex;
+    void search_path;
+    return rest;
+  }, [currentBatchFilters]);
+
+  const exactListing = useContentListListing({
+    fetchParams,
+    refreshKey,
+    enabled: !smartActive,
+  });
+  const semanticListing = useContentListSemanticListing({
+    query: searchQuery,
+    filters: structuralFilters,
+    enabled: searchMode === "smart",
+    refreshKey,
+  });
+
+  const listing = smartActive ? semanticListing : exactListing;
   const {
     files,
     documentClassFacets,
@@ -154,14 +194,12 @@ export function ContentListView({
     extractionValueFacets,
     total,
     isLoading,
-    isLoadingMore,
-    sentinelRef,
-  } = useContentListListing({
-    fetchParams,
-    refreshKey,
-  });
+  } = listing;
+  const searchMeta = smartActive ? semanticListing.searchMeta : undefined;
+  const { isLoadingMore, sentinelRef } = exactListing;
 
-  const folderModeEnabled = !hasAnyFilter && Boolean(onNavigate);
+  // Folder browsing and infinite scroll only apply to the exact listing path.
+  const folderModeEnabled = !smartActive && !hasAnyFilter && Boolean(onNavigate);
   const folderState = useContentListFolders({
     enabled: folderModeEnabled,
     path: currentPath,
@@ -265,6 +303,7 @@ export function ContentListView({
         total={visibleTotal}
         isLoading={visibleIsLoading}
         nameFilter={nameFilter}
+        searchMode={searchMode}
         nameRegex={nameRegex}
         searchPath={searchPath}
         contentKindFilter={contentKindFilter}
@@ -282,6 +321,7 @@ export function ContentListView({
         fieldLeaves={fieldLeaves}
         extractionValueChips={suggestedExtractionValues}
         onNameFilterChange={setNameFilter}
+        onSearchModeChange={setSearchMode}
         onNameRegexChange={setNameRegex}
         onSearchPathChange={setSearchPath}
         onContentKindFilterChange={setContentKindFilter}
@@ -315,6 +355,8 @@ export function ContentListView({
         processTooltip={translate("custom.content.actions.process")}
         files={visibleFiles}
         folders={visibleFolders}
+        searchMeta={searchMeta}
+        searchQuery={smartActive ? searchQuery : undefined}
         isLoading={visibleIsLoading}
         sortBy={sortBy}
         sortOrder={sortOrder}
@@ -327,7 +369,7 @@ export function ContentListView({
         onToggleVisibleFileSelection={handleToggleVisibleFileSelection}
       />
 
-      {!folderModeEnabled && (
+      {!folderModeEnabled && !smartActive && (
         <>
           <div ref={sentinelRef} className="h-1" />
           {isLoadingMore && (

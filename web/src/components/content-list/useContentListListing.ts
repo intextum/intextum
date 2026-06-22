@@ -20,6 +20,7 @@ interface UseAllFilesListingOptions {
   fetchParams: Parameters<typeof contentApi.listAll>[0];
   refreshKey?: number;
   pageSize?: number;
+  enabled?: boolean;
 }
 
 interface FlatFileListingState {
@@ -69,11 +70,13 @@ export function useContentListListing({
   fetchParams,
   refreshKey,
   pageSize = DEFAULT_PAGE_SIZE,
+  enabled = true,
 }: UseAllFilesListingOptions) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const query = useInfiniteQuery({
     queryKey: [...queryKeys.content.listAll(fetchParams), pageSize, refreshKey ?? 0],
+    enabled,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) =>
       contentApi.listAll({

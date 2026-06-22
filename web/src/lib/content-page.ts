@@ -1,4 +1,5 @@
 import type { ContentListViewProps } from "@/components/ContentListView";
+import type { ContentListSearchMode } from "@/components/content-list/useContentListFilters";
 import type { ContentEnrichmentReviewStatus, ContentItemInfo } from "@/dataProvider";
 import type {
   ContentItemProcessHandler,
@@ -18,6 +19,9 @@ export interface ContentPageUrlState {
   allFilesExtractionFieldFilter: string;
   allFilesFieldFilters: string;
   allFilesReviewStatusFilter: string;
+  allFilesSearchMode: ContentListSearchMode;
+  /** One-time query seed from a deep link (`?q=`); not synced back to the URL. */
+  allFilesInitialQuery: string;
   pathParts: string[];
   breadcrumbPaths: string[];
 }
@@ -32,11 +36,14 @@ export interface BuildContentPageAllFilesViewPropsOptions {
   allFilesStaleOnly: boolean;
   allFilesStatusFilter: string;
   allFilesReviewStatusFilter: string;
+  allFilesSearchMode: ContentListSearchMode;
+  allFilesInitialQuery: string;
   refreshKey: number;
   onNavigate: (path: string) => void;
   onImmutableChange: (immutable: boolean) => void;
   onFileClick: (file: ContentItemInfo) => void;
   onProcess: ContentItemProcessHandler;
+  onSearchModeChange: (mode: ContentListSearchMode) => void;
   onDocumentClassFilterChange: (documentClass: string) => void;
   onExtractionSchemaFilterChange: (schema: string) => void;
   onExtractionFieldFilterChange: (field: string) => void;
@@ -123,6 +130,9 @@ export function readContentPageUrlState(
   const allFilesExtractionFieldFilter = searchParams.get("extraction_field") ?? "";
   const allFilesFieldFilters = searchParams.get("field_filters") ?? "";
   const allFilesReviewStatusFilter = searchParams.get("review_status") ?? "";
+  const allFilesSearchMode: ContentListSearchMode =
+    searchParams.get("mode") === "smart" ? "smart" : "exact";
+  const allFilesInitialQuery = searchParams.get("q") ?? "";
   const pathParts = currentPath.split("/").filter(Boolean);
   const breadcrumbPaths = pathParts.map((_, index) => pathParts.slice(0, index + 1).join("/"));
 
@@ -137,6 +147,8 @@ export function readContentPageUrlState(
     allFilesExtractionFieldFilter,
     allFilesFieldFilters,
     allFilesReviewStatusFilter,
+    allFilesSearchMode,
+    allFilesInitialQuery,
     pathParts,
     breadcrumbPaths,
   };
@@ -297,11 +309,14 @@ export function buildContentPageAllFilesViewProps({
   allFilesStaleOnly,
   allFilesStatusFilter,
   allFilesReviewStatusFilter,
+  allFilesSearchMode,
+  allFilesInitialQuery,
   refreshKey,
   onNavigate,
   onImmutableChange,
   onFileClick,
   onProcess,
+  onSearchModeChange,
   onDocumentClassFilterChange,
   onExtractionSchemaFilterChange,
   onExtractionFieldFilterChange,
@@ -326,6 +341,9 @@ export function buildContentPageAllFilesViewProps({
     initialStaleOnly: allFilesStaleOnly,
     initialStatusFilter: allFilesStatusFilter,
     initialReviewStatusFilter: allFilesReviewStatusFilter as ContentEnrichmentReviewStatus | "",
+    initialSearchMode: allFilesSearchMode,
+    initialNameFilter: allFilesInitialQuery,
+    onSearchModeChange,
     onDocumentClassFilterChange,
     onExtractionSchemaFilterChange,
     onExtractionFieldFilterChange,

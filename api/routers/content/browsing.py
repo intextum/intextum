@@ -148,6 +148,10 @@ async def list_all_files(
         default=False,
         description="Apply the name filter to relative paths as well as filenames",
     ),
+    ids: list[str] | None = Query(
+        default=None,
+        description="Restrict results to these content item ids (e.g. semantic search hits)",
+    ),
     path: str = Query(
         default=None,
         description="Scope results to one folder subtree (folder-prefixed path)",
@@ -223,6 +227,7 @@ async def list_all_files(
             name_contains=name,
             name_regex=name_regex,
             search_path=search_path,
+            ids=tuple(ids) if ids is not None else None,
             path=path,
             content_kind=content_kind.value if content_kind else None,
             extension=extension,

@@ -1,4 +1,4 @@
-import { FolderTree, Regex, Search, X } from "lucide-react";
+import { FolderTree, Regex, Search, Sparkles, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import type { FieldFilterLeaf, FieldFilterPredicate } from "@/lib/field-filters"
 
 import { FieldConditionsEditor } from "./FieldConditionsEditor";
 import { FilterBuilderMenu } from "./FilterBuilderMenu";
-import type { ContentListFilterChip } from "./useContentListFilters";
+import type { ContentListFilterChip, ContentListSearchMode } from "./useContentListFilters";
 
 const SEARCH_OPTION_TOGGLE_CLASS =
   "h-7 min-w-7 rounded-sm px-0 text-muted-foreground hover:bg-muted hover:text-foreground aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary aria-[pressed=true]:text-primary-foreground aria-[pressed=true]:shadow-sm aria-[pressed=true]:ring-1 aria-[pressed=true]:ring-primary/30 aria-[pressed=true]:hover:bg-primary/90";
@@ -20,6 +20,7 @@ interface ContentListFilterBarProps {
   total: number;
   isLoading: boolean;
   nameFilter: string;
+  searchMode: ContentListSearchMode;
   nameRegex: boolean;
   searchPath: boolean;
   contentKindFilter: ContentItemKind | "";
@@ -37,6 +38,7 @@ interface ContentListFilterBarProps {
   fieldLeaves: FieldFilterLeaf[];
   extractionValueChips: FilterChip<string>[];
   onNameFilterChange: (value: string) => void;
+  onSearchModeChange: (mode: ContentListSearchMode) => void;
   onNameRegexChange: (value: boolean) => void;
   onSearchPathChange: (value: boolean) => void;
   onContentKindFilterChange: (value: ContentItemKind | "") => void;
@@ -81,6 +83,7 @@ export function ContentListFilterBar({
   total,
   isLoading,
   nameFilter,
+  searchMode,
   nameRegex,
   searchPath,
   contentKindFilter,
@@ -98,6 +101,7 @@ export function ContentListFilterBar({
   fieldLeaves,
   extractionValueChips,
   onNameFilterChange,
+  onSearchModeChange,
   onNameRegexChange,
   onSearchPathChange,
   onContentKindFilterChange,
@@ -119,45 +123,68 @@ export function ContentListFilterBar({
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card/70 p-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] max-w-sm flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative min-w-[200px] flex-1">
+          {searchMode === "smart" ? (
+            <Sparkles className="absolute left-2.5 top-2.5 h-4 w-4 text-primary" />
+          ) : (
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          )}
           <Input
             data-shortcut-search="true"
-            placeholder={t("name_filter")}
+            placeholder={t(searchMode === "smart" ? "semantic_filter" : "name_filter")}
             value={nameFilter}
             onChange={(event) => onNameFilterChange(event.target.value)}
             className="pl-8 pr-20"
           />
           <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
+            {searchMode === "exact" && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Toggle
+                      pressed={nameRegex}
+                      onPressedChange={onNameRegexChange}
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("name_regex_toggle")}
+                      className={SEARCH_OPTION_TOGGLE_CLASS}
+                    >
+                      <Regex className="h-3.5 w-3.5" />
+                    </Toggle>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("name_regex_toggle_tooltip")}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Toggle
+                      pressed={searchPath}
+                      onPressedChange={onSearchPathChange}
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("search_path_toggle")}
+                      className={SEARCH_OPTION_TOGGLE_CLASS}
+                    >
+                      <FolderTree className="h-3.5 w-3.5" />
+                    </Toggle>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("search_path_toggle_tooltip")}</TooltipContent>
+                </Tooltip>
+              </>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Toggle
-                  pressed={nameRegex}
-                  onPressedChange={onNameRegexChange}
+                  pressed={searchMode === "smart"}
+                  onPressedChange={(pressed) => onSearchModeChange(pressed ? "smart" : "exact")}
                   variant="outline"
                   size="sm"
-                  aria-label={t("name_regex_toggle")}
+                  aria-label={t("smart_search_toggle")}
                   className={SEARCH_OPTION_TOGGLE_CLASS}
                 >
-                  <Regex className="h-3.5 w-3.5" />
+                  <Sparkles className="h-3.5 w-3.5" />
                 </Toggle>
               </TooltipTrigger>
-              <TooltipContent>{t("name_regex_toggle_tooltip")}</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Toggle
-                  pressed={searchPath}
-                  onPressedChange={onSearchPathChange}
-                  variant="outline"
-                  size="sm"
-                  aria-label={t("search_path_toggle")}
-                  className={SEARCH_OPTION_TOGGLE_CLASS}
-                >
-                  <FolderTree className="h-3.5 w-3.5" />
-                </Toggle>
-              </TooltipTrigger>
-              <TooltipContent>{t("search_path_toggle_tooltip")}</TooltipContent>
+              <TooltipContent>{t("smart_search_toggle_tooltip")}</TooltipContent>
             </Tooltip>
           </div>
         </div>

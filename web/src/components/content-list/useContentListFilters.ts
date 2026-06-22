@@ -15,6 +15,9 @@ import {
 
 import type { SortBy, SortOrder } from "./types";
 
+/** Whether the name box does substring filtering ("exact") or semantic search ("smart"). */
+export type ContentListSearchMode = "exact" | "smart";
+
 export type ContentListFilterKind =
   | "name"
   | "content_kind"
@@ -45,7 +48,11 @@ interface UseAllFilesFiltersOptions {
   initialStaleOnly: boolean;
   initialStatusFilter: string;
   initialReviewStatusFilter: ContentEnrichmentReviewStatus | "";
+  initialSearchMode?: ContentListSearchMode;
+  /** One-time seed for the name/query box (e.g. from a deep-linked `?q=`). */
+  initialNameFilter?: string;
   onActiveFiltersChange?: (filters: AllFilesBatchFilters) => void;
+  onSearchModeChange?: (mode: ContentListSearchMode) => void;
   onDocumentClassFilterChange?: (documentClass: string) => void;
   onExtractionSchemaFilterChange?: (schema: string) => void;
   onExtractionFieldFilterChange?: (field: string) => void;
@@ -67,7 +74,10 @@ export function useContentListFilters({
   initialStaleOnly,
   initialStatusFilter,
   initialReviewStatusFilter,
+  initialSearchMode = "exact",
+  initialNameFilter = "",
   onActiveFiltersChange,
+  onSearchModeChange,
   onDocumentClassFilterChange,
   onExtractionSchemaFilterChange,
   onExtractionFieldFilterChange,
@@ -76,8 +86,9 @@ export function useContentListFilters({
   onStatusFilterChange,
   onReviewStatusFilterChange,
 }: UseAllFilesFiltersOptions) {
-  const [nameFilter, setNameFilter] = useState("");
-  const [debouncedName, setDebouncedName] = useState("");
+  const [nameFilter, setNameFilter] = useState(initialNameFilter);
+  const [debouncedName, setDebouncedName] = useState(initialNameFilter);
+  const [searchMode, setSearchModeState] = useState<ContentListSearchMode>(initialSearchMode);
   const [nameRegex, setNameRegex] = useState(false);
   const [searchPath, setSearchPath] = useState(false);
   const [contentKindFilter, setContentKindFilter] = useState<ContentItemKind | "">(
@@ -173,6 +184,18 @@ export function useContentListFilters({
   useEffect(() => {
     setReviewStatusFilter(initialReviewStatusFilter);
   }, [initialReviewStatusFilter]);
+
+  useEffect(() => {
+    setSearchModeState(initialSearchMode);
+  }, [initialSearchMode]);
+
+  const setSearchMode = useCallback(
+    (mode: ContentListSearchMode) => {
+      setSearchModeState(mode);
+      onSearchModeChange?.(mode);
+    },
+    [onSearchModeChange],
+  );
 
   useEffect(() => {
     setSortBy(initialSortBy);
@@ -425,6 +448,9 @@ export function useContentListFilters({
   return {
     nameFilter,
     setNameFilter,
+    searchMode,
+    setSearchMode,
+    searchQuery: debouncedName,
     nameRegex,
     setNameRegex,
     searchPath,

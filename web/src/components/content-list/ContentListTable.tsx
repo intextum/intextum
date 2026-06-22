@@ -36,8 +36,42 @@ import {
   getContentItemDisplayName,
   getContentItemIcon,
 } from "@/lib/content-utils";
+import { buildHighlightedTextSegments } from "@/lib/search-results";
 
 import type { SortBy, SortOrder } from "./types";
+import type { ContentSearchMeta } from "./useContentListSemanticListing";
+
+function RelevanceBadge({ score }: { score: number }) {
+  return (
+    <Badge
+      variant="outline"
+      className="shrink-0 border-primary/30 bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary"
+    >
+      {Math.round(score * 100)}%
+    </Badge>
+  );
+}
+
+function MatchSnippet({ snippet, query }: { snippet: string; query: string }) {
+  const trimmed = snippet.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const segments = buildHighlightedTextSegments(trimmed, query);
+  return (
+    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+      {segments.map((segment, index) =>
+        segment.highlighted ? (
+          <mark key={index} className="rounded-sm bg-primary/20 px-0.5 text-foreground">
+            {segment.text}
+          </mark>
+        ) : (
+          <span key={index}>{segment.text}</span>
+        ),
+      )}
+    </p>
+  );
+}
 
 const STATUS_ICON_MAP: Record<
   string,
@@ -105,6 +139,10 @@ interface ContentListTableProps {
   processTooltip: string;
   files: ContentItemInfo[];
   folders?: FolderInfo[];
+  /** Per-row semantic match metadata, keyed by content item id; smart mode only. */
+  searchMeta?: ReadonlyMap<string, ContentSearchMeta>;
+  /** Active semantic query, used to highlight snippet terms. */
+  searchQuery?: string;
   isLoading: boolean;
   sortBy: SortBy;
   sortOrder: SortOrder;
@@ -122,6 +160,8 @@ export function ContentListTable({
   processTooltip,
   files,
   folders = [],
+  searchMeta,
+  searchQuery = "",
   isLoading,
   sortBy,
   sortOrder,
@@ -202,6 +242,7 @@ export function ContentListTable({
         {files.map((file) => {
           const selected = selectedFilePaths?.has(file.path) ?? false;
           const rowModel = buildContentListRowModel(file);
+          const meta = searchMeta?.get(file.id);
 
           return (
             <div
@@ -242,8 +283,12 @@ export function ContentListTable({
                         {rowModel.folderPath}
                       </div>
                     )}
+                    {meta && <MatchSnippet snippet={meta.snippet} query={searchQuery} />}
                   </div>
-                  <StatusBadge status={rowModel.visibleStatus ?? undefined} />
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {meta && <RelevanceBadge score={meta.score} />}
+                    <StatusBadge status={rowModel.visibleStatus ?? undefined} />
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                   <span>{formatSize(file.size_bytes)}</span>
@@ -374,6 +419,7 @@ export function ContentListTable({
             {files.map((file) => {
               const selected = selectedFilePaths?.has(file.path) ?? false;
               const rowModel = buildContentListRowModel(file);
+              const meta = searchMeta?.get(file.id);
 
               return (
                 <TableRow
@@ -401,9 +447,13 @@ export function ContentListTable({
                         {getContentItemIcon(file.kind, file.extension)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <span className="block truncate text-sm">
-                          {getContentItemDisplayName(file)}
-                        </span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="min-w-0 flex-1 truncate text-sm">
+                            {getContentItemDisplayName(file)}
+                          </span>
+                          {meta && <RelevanceBadge score={meta.score} />}
+                        </div>
+                        {meta && <MatchSnippet snippet={meta.snippet} query={searchQuery} />}
                         {(rowModel.folderPath ||
                           rowModel.showDocumentClassBadge ||
                           rowModel.showNeedsReviewBadge) && (

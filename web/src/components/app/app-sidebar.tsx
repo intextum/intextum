@@ -37,7 +37,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BRAND_SUBTITLE, BRAND_TITLE } from "@/config/branding";
 import {
   Files,
-  Search,
   MessageSquare,
   Trash2,
   Pencil,
@@ -227,7 +226,6 @@ export function AppSidebar() {
 
   const adminMatch = useMatch({ path: "/admin", end: false });
   const contentMatch = useMatch({ path: "/content", end: false });
-  const searchMatch = useMatch({ path: "/search", end: false });
   const showAdminGroup = !isPermissionsPending && (permissions?.is_admin ?? false);
 
   return (
@@ -260,14 +258,6 @@ export function AppSidebar() {
                     <Link to="/content" onClick={handleClick}>
                       <Files />
                       <span>{translate("resources.content.name")}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={!!searchMatch}>
-                    <Link to="/search" onClick={handleClick}>
-                      <Search />
-                      <span>{translate("custom.pages.search.title")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

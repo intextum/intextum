@@ -56,6 +56,7 @@ async def test_query_context_builder_threads_effective_settings():
         name_contains=None,
         name_regex=False,
         search_path=False,
+        ids=None,
         content_kind=None,
         extension=None,
         status=None,

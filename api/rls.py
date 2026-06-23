@@ -15,7 +15,6 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import AsyncIterator
 from typing import Literal
-from unittest.mock import Mock
 
 from sqlalchemy import event, text
 from sqlalchemy.engine import Connection
@@ -161,9 +160,6 @@ async def set_rls_context(db: AsyncSession, context: RlsContext) -> None:
     transaction begins, so ``SET LOCAL`` remains safe with pooled connections
     even when service methods commit mid-request.
     """
-    if isinstance(db, Mock) or not hasattr(db, "sync_session"):
-        return
-
     db.sync_session.info[_RLS_CONTEXT_KEY] = context
     await db.execute(_SET_CONTEXT_SQL, context.params())
 

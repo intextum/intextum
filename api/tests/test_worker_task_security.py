@@ -151,6 +151,11 @@ def mock_db_session():
 
 
 @pytest.fixture
+def noop_worker_task_context_applier():
+    return AsyncMock()
+
+
+@pytest.fixture
 def mock_record():
     """Create a mock IndexedContentItem record."""
     record = IndexedContentItem(
@@ -729,7 +734,9 @@ async def test_heartbeat_task_without_stage_skips_content_item_update(mock_db_se
 
 
 @pytest.mark.asyncio
-async def test_complete_task_forwards_processing_config(mock_db_session):
+async def test_complete_task_forwards_processing_config(
+    mock_db_session, noop_worker_task_context_applier
+):
     """Worker complete endpoint forwards optional processing config to task service."""
     request = CompleteTaskRequest(
         task_secret="task-secret",
@@ -745,6 +752,7 @@ async def test_complete_task_forwards_processing_config(mock_db_session):
             request,
             worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert response == {"status": "ok"}
@@ -759,7 +767,9 @@ async def test_complete_task_forwards_processing_config(mock_db_session):
 
 
 @pytest.mark.asyncio
-async def test_complete_task_returns_404_on_task_secret_auth_failure(mock_db_session):
+async def test_complete_task_returns_404_on_task_secret_auth_failure(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = CompleteTaskRequest(task_secret="wrong-secret")
     svc = AsyncMock()
     svc.complete_task.return_value = False
@@ -771,6 +781,7 @@ async def test_complete_task_returns_404_on_task_secret_auth_failure(mock_db_ses
                 request,
                 worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
@@ -779,6 +790,7 @@ async def test_complete_task_returns_404_on_task_secret_auth_failure(mock_db_ses
 @pytest.mark.asyncio
 async def test_complete_content_enrichment_training_task_forwards_registry_payload(
     mock_db_session,
+    noop_worker_task_context_applier,
 ):
     request = CompleteContentEnrichmentTrainingTaskRequest(
         task_secret="task-secret",
@@ -794,6 +806,7 @@ async def test_complete_content_enrichment_training_task_forwards_registry_paylo
             request,
             worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert response == {"status": "ok"}
@@ -809,6 +822,7 @@ async def test_complete_content_enrichment_training_task_forwards_registry_paylo
 @pytest.mark.asyncio
 async def test_complete_content_enrichment_training_task_returns_404_on_auth_failure(
     mock_db_session,
+    noop_worker_task_context_applier,
 ):
     request = CompleteContentEnrichmentTrainingTaskRequest(
         task_secret="wrong-secret",
@@ -824,13 +838,16 @@ async def test_complete_content_enrichment_training_task_returns_404_on_auth_fai
                 request,
                 worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_complete_task_forwards_content_enrichment_payloads(mock_db_session):
+async def test_complete_task_forwards_content_enrichment_payloads(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = CompleteTaskRequest(
         task_secret="task-secret",
         document_classification={"status": "completed", "label": "Permit"},
@@ -846,6 +863,7 @@ async def test_complete_task_forwards_content_enrichment_payloads(mock_db_sessio
             request,
             worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert response == {"status": "ok"}
@@ -860,7 +878,9 @@ async def test_complete_task_forwards_content_enrichment_payloads(mock_db_sessio
 
 
 @pytest.mark.asyncio
-async def test_heartbeat_returns_404_on_task_secret_auth_failure(mock_db_session):
+async def test_heartbeat_returns_404_on_task_secret_auth_failure(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = HeartbeatTaskRequest(task_secret="wrong-secret")
     svc = AsyncMock()
     svc.heartbeat_task.return_value = False
@@ -872,6 +892,7 @@ async def test_heartbeat_returns_404_on_task_secret_auth_failure(mock_db_session
                 request,
                 worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
@@ -879,7 +900,9 @@ async def test_heartbeat_returns_404_on_task_secret_auth_failure(mock_db_session
 
 
 @pytest.mark.asyncio
-async def test_heartbeat_forwards_stage_to_service(mock_db_session):
+async def test_heartbeat_forwards_stage_to_service(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = HeartbeatTaskRequest(task_secret="secret-1", stage="chunking")
     svc = AsyncMock()
     svc.heartbeat_task.return_value = True
@@ -890,6 +913,7 @@ async def test_heartbeat_forwards_stage_to_service(mock_db_session):
             request,
             worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     svc.heartbeat_task.assert_awaited_once_with(
@@ -898,7 +922,9 @@ async def test_heartbeat_forwards_stage_to_service(mock_db_session):
 
 
 @pytest.mark.asyncio
-async def test_fail_returns_404_on_task_secret_auth_failure(mock_db_session):
+async def test_fail_returns_404_on_task_secret_auth_failure(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = FailTaskRequest(task_secret="wrong-secret", error_message="boom")
     svc = AsyncMock()
     svc.fail_task.return_value = None
@@ -910,6 +936,7 @@ async def test_fail_returns_404_on_task_secret_auth_failure(mock_db_session):
                 request,
                 worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
@@ -972,6 +999,7 @@ async def test_claim_task_serializes_typed_task_payload(mock_db_session):
 @pytest.mark.asyncio
 async def test_get_content_enrichment_training_dataset_returns_typed_payload(
     mock_db_session,
+    noop_worker_task_context_applier,
 ):
     request = Request(
         {
@@ -1018,6 +1046,7 @@ async def test_get_content_enrichment_training_dataset_returns_typed_payload(
             request=request,
             _worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert response.task_id == "task-1"
@@ -1027,6 +1056,7 @@ async def test_get_content_enrichment_training_dataset_returns_typed_payload(
 @pytest.mark.asyncio
 async def test_get_content_enrichment_task_source_returns_typed_payload(
     mock_db_session,
+    noop_worker_task_context_applier,
 ):
     request = Request(
         {
@@ -1059,6 +1089,7 @@ async def test_get_content_enrichment_task_source_returns_typed_payload(
             request=request,
             _worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert response.task_id == "task-1"
@@ -1069,6 +1100,7 @@ async def test_get_content_enrichment_task_source_returns_typed_payload(
 @pytest.mark.asyncio
 async def test_get_content_enrichment_task_source_returns_404_on_auth_failure(
     mock_db_session,
+    noop_worker_task_context_applier,
 ):
     request = Request(
         {
@@ -1086,6 +1118,7 @@ async def test_get_content_enrichment_task_source_returns_404_on_auth_failure(
                 request=request,
                 _worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
@@ -1096,6 +1129,7 @@ async def test_get_content_enrichment_task_source_returns_404_on_auth_failure(
 async def test_upload_content_enrichment_training_artifact_stores_file_and_returns_typed_payload(
     mock_db_session,
     temp_data_dir,
+    noop_worker_task_context_applier,
 ):
     request = Request(
         {
@@ -1127,6 +1161,7 @@ async def test_upload_content_enrichment_training_artifact_stores_file_and_retur
             file=upload,
             _worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert isinstance(response, ContentEnrichmentTrainingArtifactUploadResponse)
@@ -1143,6 +1178,7 @@ async def test_upload_content_enrichment_training_artifact_stores_file_and_retur
 @pytest.mark.asyncio
 async def test_upload_content_enrichment_training_artifact_returns_404_on_auth_failure(
     mock_db_session,
+    noop_worker_task_context_applier,
 ):
     request = Request(
         {
@@ -1165,6 +1201,7 @@ async def test_upload_content_enrichment_training_artifact_returns_404_on_auth_f
                 file=upload,
                 _worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
@@ -1175,6 +1212,7 @@ async def test_upload_content_enrichment_training_artifact_returns_404_on_auth_f
 async def test_upload_content_enrichment_training_artifact_returns_clear_500_on_storage_error(
     mock_db_session,
     temp_data_dir,
+    noop_worker_task_context_applier,
 ):
     request = Request(
         {
@@ -1211,6 +1249,7 @@ async def test_upload_content_enrichment_training_artifact_returns_clear_500_on_
                 file=upload,
                 _worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 500
@@ -1219,7 +1258,9 @@ async def test_upload_content_enrichment_training_artifact_returns_clear_500_on_
 
 
 @pytest.mark.asyncio
-async def test_fail_task_serializes_typed_result(mock_db_session):
+async def test_fail_task_serializes_typed_result(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = FailTaskRequest(task_secret="secret-1", error_message="boom")
     svc = AsyncMock()
     svc.fail_task.return_value = TaskFailureResult(
@@ -1234,6 +1275,7 @@ async def test_fail_task_serializes_typed_result(mock_db_session):
             request,
             worker_id="worker-1",
             db=mock_db_session,
+            apply_worker_task_context=noop_worker_task_context_applier,
         )
 
     assert response == {
@@ -1244,7 +1286,9 @@ async def test_fail_task_serializes_typed_result(mock_db_session):
 
 
 @pytest.mark.asyncio
-async def test_abort_returns_404_on_task_secret_auth_failure(mock_db_session):
+async def test_abort_returns_404_on_task_secret_auth_failure(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = AbortTaskRequest(task_secret="wrong-secret", reason="stop")
     svc = AsyncMock()
     svc.abort_task.return_value = False
@@ -1256,6 +1300,7 @@ async def test_abort_returns_404_on_task_secret_auth_failure(mock_db_session):
                 request,
                 worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404
@@ -1263,7 +1308,9 @@ async def test_abort_returns_404_on_task_secret_auth_failure(mock_db_session):
 
 
 @pytest.mark.asyncio
-async def test_superseded_returns_404_on_task_secret_auth_failure(mock_db_session):
+async def test_superseded_returns_404_on_task_secret_auth_failure(
+    mock_db_session, noop_worker_task_context_applier
+):
     request = CheckSupersededRequest(task_secret="wrong-secret")
     svc = AsyncMock()
     svc.is_superseded.return_value = None
@@ -1275,6 +1322,7 @@ async def test_superseded_returns_404_on_task_secret_auth_failure(mock_db_sessio
                 request,
                 worker_id="worker-1",
                 db=mock_db_session,
+                apply_worker_task_context=noop_worker_task_context_applier,
             )
 
     assert exc.value.status_code == 404

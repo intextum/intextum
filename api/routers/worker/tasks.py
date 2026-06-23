@@ -2,9 +2,9 @@
 
 import logging
 
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import NoReturn
-from unittest.mock import Mock
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi import File, UploadFile
@@ -40,6 +40,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 _TASK_AUTH_ERROR_DETAIL = "Task not found or invalid secret"
+WorkerTaskContextApplier = Callable[..., Awaitable[None]]
 
 
 def _raise_task_auth_error() -> NoReturn:
@@ -57,9 +58,6 @@ async def _set_worker_task_context(
     task_secret: str,
     worker_id: str,
 ) -> None:
-    if isinstance(db, Mock):
-        return
-
     task = await TaskQueueService(db).get_authorized_task(
         task_id, task_secret, worker_id=worker_id
     )
@@ -73,6 +71,10 @@ async def _set_worker_task_context(
             content_item_id=task.content_item_id,
         ),
     )
+
+
+def get_worker_task_context_applier() -> WorkerTaskContextApplier:
+    return _set_worker_task_context
 
 
 @router.post("/tasks/claim")
@@ -113,10 +115,13 @@ async def get_content_enrichment_training_dataset(
     request: Request,
     _worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Return the reviewed GLiNER2 training dataset for one claimed training task."""
     task_secret = get_task_secret_header(request)
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=task_secret, worker_id=_worker_id
     )
     dataset = await ContentEnrichmentTrainingService(db).get_worker_training_dataset(
@@ -138,10 +143,13 @@ async def get_content_enrichment_task_source(
     request: Request,
     _worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Return stored chunks and effective class for one claimed enrichment rerun task."""
     task_secret = get_task_secret_header(request)
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=task_secret, worker_id=_worker_id
     )
     source = await TaskQueueService(db).get_content_enrichment_task_source(
@@ -164,10 +172,13 @@ async def upload_content_enrichment_training_artifact(
     file: UploadFile = File(...),
     _worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Upload one adapter artifact bundle for a claimed training task."""
     task_secret = get_task_secret_header(request)
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=task_secret, worker_id=_worker_id
     )
     svc = ContentEnrichmentTrainingService(db)
@@ -231,9 +242,12 @@ async def complete_task(
     request: CompleteTaskRequest,
     worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Mark a task as completed. Requires the per-task secret."""
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=request.task_secret, worker_id=worker_id
     )
     svc = TaskQueueService(db)
@@ -256,9 +270,12 @@ async def complete_content_enrichment_training_task(
     request: CompleteContentEnrichmentTrainingTaskRequest,
     worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Mark a training task complete and promote its registry entry."""
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=request.task_secret, worker_id=worker_id
     )
     svc = TaskQueueService(db)
@@ -283,9 +300,12 @@ async def heartbeat_task(
     request: HeartbeatTaskRequest,
     worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Refresh the claim heartbeat timestamp for an active task."""
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=request.task_secret, worker_id=worker_id
     )
     svc = TaskQueueService(db)
@@ -303,9 +323,12 @@ async def fail_task(
     request: FailTaskRequest,
     worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Report a task failure. Backend handles retry logic."""
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=request.task_secret, worker_id=worker_id
     )
     svc = TaskQueueService(db)
@@ -326,9 +349,12 @@ async def abort_task_endpoint(
     request: AbortTaskRequest,
     worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Explicitly abort a task."""
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=request.task_secret, worker_id=worker_id
     )
     svc = TaskQueueService(db)
@@ -351,9 +377,12 @@ async def check_superseded(
     request: CheckSupersededRequest,
     worker_id: str = Depends(require_worker_token),
     db: AsyncSession = Depends(get_db),
+    apply_worker_task_context: WorkerTaskContextApplier = Depends(
+        get_worker_task_context_applier
+    ),
 ):
     """Check if a task has been superseded by a newer task for the same file."""
-    await _set_worker_task_context(
+    await apply_worker_task_context(
         db=db, task_id=task_id, task_secret=request.task_secret, worker_id=worker_id
     )
     svc = TaskQueueService(db)

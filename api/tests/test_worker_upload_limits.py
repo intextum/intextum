@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from auth.worker_auth import require_worker_token
+from routers.worker.tasks import get_worker_task_context_applier
 
 # Shared task secret used across all upload-limit tests.
 _TASK_SECRET = "test-task-secret"
@@ -29,6 +30,10 @@ def _authorized_task(content_item_id: str):
         folder_uuid="folder-1",
         relative_path="docs/file.pdf",
     )
+
+
+async def _noop_worker_task_context_applier(**_kwargs):
+    return None
 
 
 def test_single_upload_rejects_oversized_file(test_client, temp_data_dir):
@@ -271,6 +276,9 @@ def test_training_artifact_upload_rejects_oversized_file(test_client, temp_data_
     from main import app
 
     app.dependency_overrides[require_worker_token] = lambda: "worker-1"
+    app.dependency_overrides[get_worker_task_context_applier] = (
+        lambda: _noop_worker_task_context_applier
+    )
     try:
         with (
             patch("routers.worker.tasks.get_settings", return_value=settings),
@@ -293,6 +301,7 @@ def test_training_artifact_upload_rejects_oversized_file(test_client, temp_data_
             )
     finally:
         app.dependency_overrides.pop(require_worker_token, None)
+        app.dependency_overrides.pop(get_worker_task_context_applier, None)
 
     assert response.status_code == 413
     assert "max file size" in response.json()["detail"]

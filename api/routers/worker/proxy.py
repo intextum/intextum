@@ -1,6 +1,5 @@
 """Worker API service proxy endpoints."""
 
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -8,16 +7,15 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from auth.worker_auth import require_worker_token
 from clients import get_embedding_client
 from config import get_settings
 from database import get_db
-from models.content.enrichment_training import ContentEnrichmentWorkerRegistryModel
-from models.enums import TaskStatus
 from models.sqlalchemy_models import IndexedContentItem
+from models.content.enrichment_training import ContentEnrichmentWorkerRegistryModel
 from models.worker import (
     ContentEnrichmentChunkSearchRequest,
     ContentEnrichmentChunkSearchResponse,
@@ -33,7 +31,6 @@ from services.ai_settings import AiSettingsService
 from services.ai_limits import (
     DEFAULT_CONTENT_ENRICHMENT_MAX_CONCURRENT_REQUESTS,
     DEFAULT_PICTURE_DESCRIPTION_MAX_CONCURRENT_REQUESTS,
-    acquire_ai_request_slot,
     ai_request_slot,
 )
 from services.content_enrichment_training import (
@@ -45,13 +42,19 @@ from services.vector_dimensions import (
     VectorDimensionMismatchError,
     validate_embedding_vectors_length,
 )
-from services.worker import WorkerService
 from services.utils import compute_content_item_id
-from rls import set_rls_context, worker_task_context
+from services.worker import WorkerService
+from .proxy_common import (
+    _authorize_claimed_process_task_id,
+    _ok_response,
+)
+from .proxy_document_llm import (
+    _post_document_extraction_llm,
+    _stream_document_extraction_llm,
+)
 from .helpers import (
     authorize_claimed_process_task_request,
     authorize_task_request,
-    get_task_secret_header,
     get_folder,
     validate_file_id,
 )
@@ -78,25 +81,39 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _sse_error_event(
+async def _authorize_registry_model_request(
+    task_id: str,
+    model_id: str,
+    request: Request,
     *,
-    message: str,
-    error_type: str,
-    status_code: int | None = None,
-) -> bytes:
-    payload: dict[str, Any] = {
-        "error": {
-            "message": message,
-            "type": error_type,
-        }
-    }
-    if status_code is not None:
-        payload["error"]["status_code"] = status_code
-    return f"data: {json.dumps(payload)}\n\n".encode("utf-8")
+    db: AsyncSession,
+    worker_id: str,
+):
+    await _authorize_claimed_process_task_id(
+        task_id, request, db=db, worker_id=worker_id
+    )
+    ai_settings = await AiSettingsService(db).get_effective_settings()
+    if model_id not in _effective_registry_model_ids(ai_settings):
+        raise HTTPException(
+            status_code=403,
+            detail="Registry model is not referenced by effective worker config",
+        )
 
 
-def _ok_response(**values: int) -> dict[str, object]:
-    return {"status": "ok", **values}
+async def _validated_worker_texts_for_task(
+    *,
+    task_id: str,
+    raw_request: Request,
+    db: AsyncSession,
+    worker_id: str,
+    raw_texts: list[str],
+) -> tuple[object, list[str]]:
+    settings = get_settings()
+    texts = _validate_worker_texts(raw_texts, settings)
+    await _authorize_claimed_process_task_id(
+        task_id, raw_request, db=db, worker_id=worker_id
+    )
+    return settings, texts
 
 
 async def _require_existing_content_item_ids(
@@ -136,79 +153,6 @@ async def _require_existing_content_item_ids(
                 "content_item_ids": missing_ids,
             },
         )
-
-
-async def _authorize_registry_model_request(
-    task_id: str,
-    model_id: str,
-    request: Request,
-    *,
-    db: AsyncSession,
-    worker_id: str,
-):
-    await _authorize_claimed_process_task_id(
-        task_id, request, db=db, worker_id=worker_id
-    )
-    ai_settings = await AiSettingsService(db).get_effective_settings()
-    if model_id not in _effective_registry_model_ids(ai_settings):
-        raise HTTPException(
-            status_code=403,
-            detail="Registry model is not referenced by effective worker config",
-        )
-
-
-async def _authorize_claimed_process_task_id(
-    task_id: str,
-    request: Request,
-    *,
-    db: AsyncSession,
-    worker_id: str,
-):
-    """Resolve one claimed process task from a path task id and task secret."""
-    task_secret = get_task_secret_header(request)
-    task = await TaskQueueService(db).get_authorized_task(
-        task_id, task_secret, worker_id=worker_id
-    )
-    if (
-        task is None
-        or task.task_type != "process"
-        or not isinstance(task.content_item_id, str)
-        or not task.content_item_id
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Task secret does not match any active processing task",
-        )
-    if task.status != TaskStatus.CLAIMED:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Processing task is no longer active: {task.status}",
-        )
-    await set_rls_context(
-        db,
-        worker_task_context(
-            worker_id=worker_id,
-            task_id=task_id,
-            content_item_id=task.content_item_id,
-        ),
-    )
-    return task
-
-
-async def _validated_worker_texts_for_task(
-    *,
-    task_id: str,
-    raw_request: Request,
-    db: AsyncSession,
-    worker_id: str,
-    raw_texts: list[str],
-) -> tuple[object, list[str]]:
-    settings = get_settings()
-    texts = _validate_worker_texts(raw_texts, settings)
-    await _authorize_claimed_process_task_id(
-        task_id, raw_request, db=db, worker_id=worker_id
-    )
-    return settings, texts
 
 
 @router.get("/config")
@@ -298,134 +242,6 @@ async def document_extraction_llm_chat_completions(
         headers={
             "Content-Type": response.headers.get("Content-Type", "application/json")
         },
-    )
-
-
-async def _post_document_extraction_llm(
-    *,
-    target_url: str,
-    payload: dict[str, Any],
-    headers: dict[str, str],
-    timeout_seconds: float | None,
-) -> httpx.Response:
-    try:
-        async with httpx.AsyncClient(
-            timeout=timeout_seconds, follow_redirects=False
-        ) as client:
-            response = await client.post(
-                target_url,
-                json=payload,
-                headers=headers,
-            )
-    except httpx.TimeoutException as exc:
-        logger.warning(
-            "Document extraction LLM upstream timed out",
-            extra={"timeout_seconds": timeout_seconds},
-        )
-        raise HTTPException(
-            status_code=504,
-            detail="Document extraction LLM request timed out",
-        ) from exc
-    except httpx.RequestError as exc:
-        logger.warning(
-            "Document extraction LLM upstream request failed",
-            extra={
-                "error": str(exc) or repr(exc),
-                "error_type": type(exc).__name__,
-                "timeout_seconds": timeout_seconds,
-                "target_url": target_url,
-            },
-        )
-        raise HTTPException(
-            status_code=502,
-            detail="Document extraction LLM request failed",
-        ) from exc
-
-    return response
-
-
-async def _stream_document_extraction_llm(
-    *,
-    target_url: str,
-    payload: dict[str, Any],
-    headers: dict[str, str],
-    timeout_seconds: float | None,
-    settings: object,
-) -> StreamingResponse:
-    """Forward a streaming chat-completions request and pipe SSE chunks back."""
-    slot = await acquire_ai_request_slot(
-        settings,
-        name="document_extraction_llm",
-        concurrency_attr="CONTENT_ENRICHMENT_MAX_CONCURRENT_REQUESTS",
-        default_concurrency=DEFAULT_CONTENT_ENRICHMENT_MAX_CONCURRENT_REQUESTS,
-        busy_detail="Document extraction LLM service is busy",
-    )
-
-    async def _iter_upstream():
-        try:
-            async with (
-                httpx.AsyncClient(
-                    timeout=timeout_seconds, follow_redirects=False
-                ) as client,
-                client.stream(
-                    "POST",
-                    target_url,
-                    json=payload,
-                    headers=headers,
-                ) as response,
-            ):
-                if response.status_code >= 400:
-                    body = await response.aread()
-                    message = body.decode("utf-8", errors="replace")
-                    logger.warning(
-                        "Document extraction LLM upstream returned error status",
-                        extra={
-                            "status_code": response.status_code,
-                            "target_url": target_url,
-                        },
-                    )
-                    yield _sse_error_event(
-                        message=message,
-                        error_type="upstream_error",
-                        status_code=response.status_code,
-                    )
-                    return
-                async for chunk in response.aiter_bytes():
-                    if chunk:
-                        yield chunk
-        except httpx.TimeoutException as exc:
-            logger.warning(
-                "Document extraction LLM upstream timed out",
-                extra={"timeout_seconds": timeout_seconds},
-            )
-            yield _sse_error_event(
-                message="upstream timeout",
-                error_type="timeout",
-            )
-            raise HTTPException(
-                status_code=504,
-                detail="Document extraction LLM request timed out",
-            ) from exc
-        except httpx.RequestError as exc:
-            logger.warning(
-                "Document extraction LLM upstream request failed",
-                extra={
-                    "error": str(exc) or repr(exc),
-                    "error_type": type(exc).__name__,
-                    "timeout_seconds": timeout_seconds,
-                    "target_url": target_url,
-                },
-            )
-            yield _sse_error_event(
-                message="upstream request failed",
-                error_type="request_error",
-            )
-        finally:
-            slot.release()
-
-    return StreamingResponse(
-        _iter_upstream(),
-        media_type="text/event-stream",
     )
 
 

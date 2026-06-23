@@ -381,6 +381,7 @@ def test_vector_upsert_authorizes_exact_task_without_mocking_auth_helper(test_cl
     )
     mock_db.execute.side_effect = [
         _db_result(one=task),
+        _db_result(),
         _db_result(all_values=["23bfe864fab4c490"]),
     ]
 
@@ -421,7 +422,7 @@ def test_vector_upsert_authorizes_exact_task_without_mocking_auth_helper(test_cl
         app.dependency_overrides.pop(get_db, None)
 
     assert response.status_code == 200
-    assert mock_db.execute.await_count == 2
+    assert mock_db.execute.await_count == 3
     mock_upsert_chunks.assert_awaited_once()
     assert mock_upsert_chunks.await_args.args[1] == "23bfe864fab4c490"
 

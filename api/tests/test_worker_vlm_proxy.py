@@ -571,6 +571,15 @@ def test_worker_config_returns_effective_picture_settings(test_client):
     finally:
         app.dependency_overrides.pop(require_worker_token, None)
 
+    classification_labels = [
+        label.model_dump(mode="json")
+        for label in ai_settings.document_classification_labels
+    ]
+    extraction_schemas = [
+        schema.model_dump(mode="json")
+        for schema in ai_settings.document_extraction_schemas
+    ]
+
     assert response.status_code == 200
     assert response.json() == {
         "embedding_model": "embed-model",
@@ -583,15 +592,7 @@ def test_worker_config_returns_effective_picture_settings(test_client):
         "document_classification_provider": "gliner2",
         "document_classification_enabled": True,
         "document_classification_model": "fastino/gliner2-multi-v1",
-        "document_classification_labels": [
-            {
-                "id": "257cfe1345cc5aa7823a422be75072e2",
-                "name": "Permit",
-                "version": 2,
-                "description": "Permit documents",
-                "aliases": [],
-            }
-        ],
+        "document_classification_labels": classification_labels,
         "document_extraction_enabled": True,
         "document_extraction_model": "fastino/gliner2-multi-v1",
         "document_extraction_llm_model": "qwen3-vl:8b",
@@ -602,30 +603,7 @@ def test_worker_config_returns_effective_picture_settings(test_client):
         "document_extraction_chat_full_text_threshold_chars": 20_000,
         "content_enrichment_stage_timeout_seconds": 300.0,
         "document_extraction_schema_models": {"permit_core": "registry:model-2"},
-        "document_extraction_schemas": [
-            {
-                "id": "c90b4aa032c65c4bb5a000ac8f1696d2",
-                "name": "permit_core",
-                "document_class_id": "",
-                "version": 4,
-                "document_class": "Permit",
-                "description": "Permit metadata",
-                "fields": [
-                    {
-                        "name": "authority",
-                        "dtype": "str",
-                        "description": "Authority",
-                        "required": False,
-                        "fields": [],
-                        "examples": [],
-                        "heading_aliases": [],
-                        "clustered_under_heading": True,
-                    }
-                ],
-                "scenes": [],
-                "section_boundary_terms": [],
-            }
-        ],
+        "document_extraction_schemas": extraction_schemas,
         "document_extraction_max_chars": 9000,
     }
 

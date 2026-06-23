@@ -11,6 +11,7 @@ from models.connector_types import (
     LocalFsDataConnector,
     S3DataConnector,
 )
+from pydantic import Field
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,126 +28,42 @@ __all__ = [
 
 
 logger = logging.getLogger(__name__)
+_YAML_KEYS_SCHEMA_EXTRA = "yaml_keys"
+
+
+def _yaml_keys(*keys: str) -> dict[str, tuple[str, ...]]:
+    return {_YAML_KEYS_SCHEMA_EXTRA: keys}
 
 
 class YamlSettingsSource:
     """Pydantic-settings source that reads from a YAML config file."""
 
-    # Maps lowercase YAML keys to Settings field names
-    FIELD_MAP: dict[str, str] = {
-        "cors_allow_origins": "CORS_ALLOW_ORIGINS_STR",
-        "app_env": "APP_ENV",
-        "extracted_data_dir": "EXTRACTED_DATA_DIR",
-        "model_artifacts_dir": "MODEL_ARTIFACTS_DIR",
-        "postgres_user": "POSTGRES_USER",
-        "postgres_password": "POSTGRES_PASSWORD",
-        "postgres_app_user": "POSTGRES_APP_USER",
-        "postgres_app_password": "POSTGRES_APP_PASSWORD",
-        "postgres_db": "POSTGRES_DB",
-        "postgres_host": "POSTGRES_HOST",
-        "postgres_port": "POSTGRES_PORT",
-        "check_interval": "CHECK_INTERVAL",
-        "auth_header_user": "AUTH_HEADER_USER",
-        "auth_header_sub": "AUTH_HEADER_SUB",
-        "auth_header_email": "AUTH_HEADER_EMAIL",
-        "auth_header_groups": "AUTH_HEADER_GROUPS",
-        "auth_header_preferred_username": "AUTH_HEADER_PREFERRED_USERNAME",
-        "auth_header_uid": "AUTH_HEADER_UID",
-        "auth_header_gids": "AUTH_HEADER_GIDS",
-        "auth_proxy_secret": "AUTH_PROXY_SECRET",
-        "auth_local_enabled": "AUTH_LOCAL_ENABLED",
-        "auth_proxy_enabled": "AUTH_PROXY_ENABLED",
-        "auth_dev_enabled": "AUTH_DEV_ENABLED",
-        "auth_session_cookie_name": "AUTH_SESSION_COOKIE_NAME",
-        "auth_session_idle_ttl_seconds": "AUTH_SESSION_IDLE_TTL_SECONDS",
-        "auth_session_absolute_ttl_seconds": "AUTH_SESSION_ABSOLUTE_TTL_SECONDS",
-        "auth_session_secure_cookie": "AUTH_SESSION_SECURE_COOKIE",
-        "auth_csrf_cookie_name": "AUTH_CSRF_COOKIE_NAME",
-        "auth_csrf_header_name": "AUTH_CSRF_HEADER_NAME",
-        "auth_password_min_length": "AUTH_PASSWORD_MIN_LENGTH",
-        "auth_password_reject_common": "AUTH_PASSWORD_REJECT_COMMON",
-        "auth_login_throttle_enabled": "AUTH_LOGIN_THROTTLE_ENABLED",
-        "auth_login_max_attempts": "AUTH_LOGIN_MAX_ATTEMPTS",
-        "auth_login_window_seconds": "AUTH_LOGIN_WINDOW_SECONDS",
-        "auth_login_lockout_seconds": "AUTH_LOGIN_LOCKOUT_SECONDS",
-        "auth_dev_username": "AUTH_DEV_USERNAME",
-        "auth_dev_sub": "AUTH_DEV_SUB",
-        "auth_dev_email": "AUTH_DEV_EMAIL",
-        "auth_dev_groups": "AUTH_DEV_GROUPS_STR",
-        "auth_dev_groups_str": "AUTH_DEV_GROUPS_STR",
-        "auth_bootstrap_admin_username": "AUTH_BOOTSTRAP_ADMIN_USERNAME",
-        "auth_bootstrap_admin_password": "AUTH_BOOTSTRAP_ADMIN_PASSWORD",
-        "auth_bootstrap_admin_email": "AUTH_BOOTSTRAP_ADMIN_EMAIL",
-        "auth_bootstrap_admin_display_name": "AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME",
-        "acl_enabled": "ACL_ENABLED",
-        "embedding_api_base": "EMBEDDING_API_BASE",
-        "embedding_api_key": "EMBEDDING_API_KEY",
-        "embedding_model": "EMBEDDING_MODEL",
-        "embedding_vector_size": "EMBEDDING_VECTOR_SIZE",
-        "embedding_max_tokens": "EMBEDDING_MAX_TOKENS",
-        "embedding_timeout_seconds": "EMBEDDING_TIMEOUT_SECONDS",
-        "embedding_max_concurrent_requests": "EMBEDDING_MAX_CONCURRENT_REQUESTS",
-        "ai_backpressure_wait_seconds": "AI_BACKPRESSURE_WAIT_SECONDS",
-        "ai_client_max_retries": "AI_CLIENT_MAX_RETRIES",
-        "chat_api_base": "CHAT_API_BASE",
-        "chat_api_key": "CHAT_API_KEY",
-        "chat_model": "CHAT_MODEL",
-        "chat_timeout_seconds": "CHAT_TIMEOUT_SECONDS",
-        "chat_max_concurrent_requests": "CHAT_MAX_CONCURRENT_REQUESTS",
-        "chat_system_prompt": "CHAT_SYSTEM_PROMPT",
-        "chat_tool_prompt": "CHAT_TOOL_PROMPT",
-        "chat_search_limit": "CHAT_SEARCH_LIMIT",
-        "chat_document_max_chars": "CHAT_DOCUMENT_MAX_CHARS",
-        "valkey_url": "VALKEY_URL",
-        "chat_runner_enabled": "CHAT_RUNNER_ENABLED",
-        "chat_run_event_ttl_seconds": "CHAT_RUN_EVENT_TTL_SECONDS",
-        "chat_run_claim_timeout_seconds": "CHAT_RUN_CLAIM_TIMEOUT_SECONDS",
-        "chat_run_heartbeat_seconds": "CHAT_RUN_HEARTBEAT_SECONDS",
-        "chat_run_poll_interval_seconds": "CHAT_RUN_POLL_INTERVAL_SECONDS",
-        "chat_run_max_replay_events": "CHAT_RUN_MAX_REPLAY_EVENTS",
-        "research_runner_enabled": "RESEARCH_RUNNER_ENABLED",
-        "user_event_ttl_seconds": "USER_EVENT_TTL_SECONDS",
-        "user_event_max_replay_events": "USER_EVENT_MAX_REPLAY_EVENTS",
-        "event_outbox_poll_interval_seconds": "EVENT_OUTBOX_POLL_INTERVAL_SECONDS",
-        "picture_description_url": "PICTURE_DESCRIPTION_URL",
-        "picture_description_model": "PICTURE_DESCRIPTION_MODEL",
-        "picture_description_prompt": "PICTURE_DESCRIPTION_PROMPT",
-        "picture_description_timeout_seconds": "PICTURE_DESCRIPTION_TIMEOUT_SECONDS",
-        "picture_description_max_concurrent_requests": "PICTURE_DESCRIPTION_MAX_CONCURRENT_REQUESTS",
-        "picture_description_max_tokens": "PICTURE_DESCRIPTION_MAX_TOKENS",
-        "picture_description_enable_thinking": "PICTURE_DESCRIPTION_ENABLE_THINKING",
-        "document_classification_enabled": "DOCUMENT_CLASSIFICATION_ENABLED",
-        "document_classification_provider": "DOCUMENT_CLASSIFICATION_PROVIDER",
-        "document_classification_model": "DOCUMENT_CLASSIFICATION_MODEL",
-        "document_classification_labels": "DOCUMENT_CLASSIFICATION_LABELS",
-        "document_extraction_enabled": "DOCUMENT_EXTRACTION_ENABLED",
-        "document_extraction_model": "DOCUMENT_EXTRACTION_MODEL",
-        "document_extraction_llm_model": "DOCUMENT_EXTRACTION_LLM_MODEL",
-        "document_extraction_llm_max_output_tokens": "DOCUMENT_EXTRACTION_LLM_MAX_OUTPUT_TOKENS",
-        "document_extraction_llm_enable_thinking": "DOCUMENT_EXTRACTION_LLM_ENABLE_THINKING",
-        "document_extraction_chunk_strategy": "DOCUMENT_EXTRACTION_CHUNK_STRATEGY",
-        "document_extraction_chat_max_retries": "DOCUMENT_EXTRACTION_CHAT_MAX_RETRIES",
-        "document_extraction_chat_evidence_required": "DOCUMENT_EXTRACTION_CHAT_EVIDENCE_REQUIRED",
-        "document_extraction_chat_full_text_threshold_chars": "DOCUMENT_EXTRACTION_CHAT_FULL_TEXT_THRESHOLD_CHARS",
-        "content_enrichment_stage_timeout_seconds": "CONTENT_ENRICHMENT_STAGE_TIMEOUT_SECONDS",
-        "content_enrichment_max_concurrent_requests": "CONTENT_ENRICHMENT_MAX_CONCURRENT_REQUESTS",
-        "document_extraction_schema_models": "DOCUMENT_EXTRACTION_SCHEMA_MODELS",
-        "document_extraction_schemas": "DOCUMENT_EXTRACTION_SCHEMAS",
-        "document_extraction_max_chars": "DOCUMENT_EXTRACTION_MAX_CHARS",
-        "log_json_format": "LOG_JSON_FORMAT",
-        "log_level": "LOG_LEVEL",
-        "reconcile_ttl_seconds": "RECONCILE_TTL_SECONDS",
-        "max_upload_file_size_bytes": "MAX_UPLOAD_FILE_SIZE_BYTES",
-        "max_upload_batch_size_bytes": "MAX_UPLOAD_BATCH_SIZE_BYTES",
-        "max_model_artifact_upload_size_bytes": "MAX_MODEL_ARTIFACT_UPLOAD_SIZE_BYTES",
-        "worker_embedding_max_texts": "WORKER_EMBEDDING_MAX_TEXTS",
-        "worker_embedding_max_text_chars": "WORKER_EMBEDDING_MAX_TEXT_CHARS",
-        "worker_embedding_max_total_chars": "WORKER_EMBEDDING_MAX_TOTAL_CHARS",
-        "encryption_key": "ENCRYPTION_KEY",
-    }
-
     def __init__(self, settings_cls: type):
         self.settings_cls = settings_cls
+
+    @property
+    def field_map(self) -> dict[str, str]:
+        fields = getattr(self.settings_cls, "model_fields", None)
+        if fields is None:
+            fields = Settings.model_fields
+
+        result: dict[str, str] = {}
+        for field_name, field_info in fields.items():
+            for yaml_key in self._yaml_keys_for_field(field_name, field_info):
+                result[yaml_key] = field_name
+        return result
+
+    @staticmethod
+    def _yaml_keys_for_field(field_name: str, field_info: Any) -> tuple[str, ...]:
+        keys = [field_name.lower()]
+        schema_extra = getattr(field_info, "json_schema_extra", None)
+        if isinstance(schema_extra, dict):
+            extra_keys = schema_extra.get(_YAML_KEYS_SCHEMA_EXTRA, ())
+            if isinstance(extra_keys, str):
+                keys.append(extra_keys)
+            else:
+                keys.extend(str(key) for key in extra_keys)
+        return tuple(dict.fromkeys(keys))
 
     def __call__(self) -> dict[str, Any]:
         config_file = os.environ.get("CONFIG_FILE", "")
@@ -173,6 +90,7 @@ class YamlSettingsSource:
             raise
 
         result: dict[str, Any] = {}
+        field_map = self.field_map
 
         for yaml_key, value in data.items():
             # Special handling: acl_admin_groups list → ACL_ADMIN_GROUPS_STR string
@@ -184,7 +102,7 @@ class YamlSettingsSource:
                 continue
 
             # Standard field mapping
-            field_name = self.FIELD_MAP.get(yaml_key)
+            field_name = field_map.get(yaml_key)
             if field_name is not None:
                 result[field_name] = value
             else:
@@ -209,10 +127,16 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = ""
 
     # API Security
-    CORS_ALLOW_ORIGINS_STR: str = ""
-    CORS_ALLOW_METHODS_STR: str = "GET,POST,PUT,DELETE,OPTIONS"
-    CORS_ALLOW_HEADERS_STR: str = (
-        "Authorization,Content-Type,X-Correlation-ID,X-Proxy-Secret,X-CSRF-Token"
+    CORS_ALLOW_ORIGINS_STR: str = Field(
+        "", json_schema_extra=_yaml_keys("cors_allow_origins")
+    )
+    CORS_ALLOW_METHODS_STR: str = Field(
+        "GET,POST,PUT,DELETE,OPTIONS",
+        json_schema_extra=_yaml_keys("cors_allow_methods"),
+    )
+    CORS_ALLOW_HEADERS_STR: str = Field(
+        "Authorization,Content-Type,X-Correlation-ID,X-Proxy-Secret,X-CSRF-Token",
+        json_schema_extra=_yaml_keys("cors_allow_headers"),
     )
 
     # File System
@@ -268,7 +192,9 @@ class Settings(BaseSettings):
     AUTH_DEV_USERNAME: str = "dev"
     AUTH_DEV_SUB: str = "dev:local"
     AUTH_DEV_EMAIL: str = "dev@example.invalid"
-    AUTH_DEV_GROUPS_STR: str = ""
+    AUTH_DEV_GROUPS_STR: str = Field(
+        "", json_schema_extra=_yaml_keys("auth_dev_groups")
+    )
     AUTH_BOOTSTRAP_ADMIN_USERNAME: str = ""
     AUTH_BOOTSTRAP_ADMIN_PASSWORD: str = ""
     AUTH_BOOTSTRAP_ADMIN_EMAIL: str = ""
@@ -276,7 +202,10 @@ class Settings(BaseSettings):
 
     # ACL Settings
     ACL_ENABLED: bool = True
-    ACL_ADMIN_GROUPS_STR: str = "admins,administrators"
+    ACL_ADMIN_GROUPS_STR: str = Field(
+        "admins,administrators",
+        json_schema_extra=_yaml_keys("acl_admin_groups"),
+    )
 
     # Reconciliation TTL (seconds) for non-watched folders
     RECONCILE_TTL_SECONDS: int = 60

@@ -528,6 +528,21 @@ def test_yaml_settings_source_supports_auth_dev_groups_list(tmp_path, monkeypatc
     assert result["AUTH_DEV_GROUPS_STR"] == "admins,developers"
 
 
+def test_yaml_settings_source_derives_field_map_from_settings_fields():
+    from config import Settings, YamlSettingsSource
+
+    field_map = YamlSettingsSource(Settings).field_map
+
+    for field_name in Settings.model_fields:
+        assert field_map[field_name.lower()] == field_name
+
+    assert field_map["public_base_url"] == "PUBLIC_BASE_URL"
+    assert field_map["db_pool_size"] == "DB_POOL_SIZE"
+    assert field_map["cors_allow_origins"] == "CORS_ALLOW_ORIGINS_STR"
+    assert field_map["auth_dev_groups"] == "AUTH_DEV_GROUPS_STR"
+    assert field_map["acl_admin_groups"] == "ACL_ADMIN_GROUPS_STR"
+
+
 def test_yaml_settings_source_maps_password_policy_and_throttle_keys(
     tmp_path, monkeypatch
 ):

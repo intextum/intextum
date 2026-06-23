@@ -1679,7 +1679,15 @@ export const en = {
           poll_interval_seconds: "Polling Interval",
           immutable: "Immutable",
           not_applicable: "N/A",
+          scan: "Scan",
           actions: "Actions",
+        },
+        scan: {
+          idle: "Not scanned",
+          scanning: "Scanning…",
+          done: "Scanned",
+          failed: "Scan failed",
+          counts: "%{dirs} dirs · %{queued} queued · %{unchanged} unchanged",
         },
         fields: {
           name_label: "Name",

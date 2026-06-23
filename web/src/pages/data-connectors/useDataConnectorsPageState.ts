@@ -161,6 +161,20 @@ export function useDataConnectorsPageState(): UseDataConnectorsPageStateResult {
     void fetchUsers();
   }, [fetchSources, fetchUsers]);
 
+  // While any connector is mid-scan, refresh quietly so progress counters update.
+  const hasActiveScan = sources.some((source) => source.scan_state === "scanning");
+  useEffect(() => {
+    if (!hasActiveScan) {
+      return;
+    }
+    const interval = setInterval(() => {
+      void fetchSources(false);
+    }, 5000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [hasActiveScan, fetchSources]);
+
   useEffect(() => {
     if (sourceTypes.length === 0) {
       return;

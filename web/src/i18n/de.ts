@@ -1691,7 +1691,15 @@ export const de = {
           force_polling: "Polling erzwingen",
           poll_interval_seconds: "Polling-Intervall",
           not_applicable: "n. a.",
+          scan: "Scan",
           actions: "Aktionen",
+        },
+        scan: {
+          idle: "Nicht gescannt",
+          scanning: "Scannt…",
+          done: "Gescannt",
+          failed: "Scan fehlgeschlagen",
+          counts: "%{dirs} Ordner · %{queued} eingereiht · %{unchanged} unverändert",
         },
         fields: {
           name_label: "Name",

@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataConnectorFormFields } from "@/pages/data-connectors/DataConnectorFormFields";
+import { ScanStatusCell } from "@/pages/data-connectors/ScanStatusCell";
 import { DataConnectorPermissionsEditor } from "@/pages/data-connectors/DataConnectorPermissionsEditor";
 import { useDataConnectorsPageState } from "@/pages/data-connectors/useDataConnectorsPageState";
 
@@ -133,6 +134,7 @@ export const DataConnectorsPage = ({ embedded = false }: { embedded?: boolean })
                   <TableRow>
                     <TableHead>{translate("custom.pages.data_connectors.table.name")}</TableHead>
                     <TableHead>{translate("custom.pages.data_connectors.table.type")}</TableHead>
+                    <TableHead>{translate("custom.pages.data_connectors.table.scan")}</TableHead>
                     <TableHead className="text-right">
                       {translate("custom.pages.data_connectors.table.actions")}
                     </TableHead>
@@ -144,6 +146,9 @@ export const DataConnectorsPage = ({ embedded = false }: { embedded?: boolean })
                       <TableCell className="font-medium">{source.name}</TableCell>
                       <TableCell>
                         {sourceTypeLabelByKey.get(source.connector_type) ?? source.connector_type}
+                      </TableCell>
+                      <TableCell>
+                        <ScanStatusCell source={source} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">

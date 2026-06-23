@@ -313,6 +313,13 @@ export interface DataConnectorEntry {
   s3_prefix: string | null;
   access_key: string | null;
   region: string | null;
+  // Initial-scan progress (read-only)
+  scan_state: "idle" | "scanning" | "done" | "failed";
+  scan_dirs: number;
+  scan_files_queued: number;
+  scan_files_unchanged: number;
+  scan_started_at: string | null;
+  scan_finished_at: string | null;
 }
 
 export interface AiSettingEntry {

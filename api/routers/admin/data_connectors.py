@@ -15,6 +15,7 @@ from .common import (
     DataConnectorEntry,
     DataConnectorTypeEntry,
     UpdateDataConnectorRequest,
+    load_scan_status_map,
     reload_watcher_configuration,
     stop_watcher_for_connector,
     to_data_connector_entry,
@@ -32,7 +33,11 @@ async def list_data_connectors(
     _ = user
     connector_svc = DataConnectorService(db)
     connectors = await connector_svc.list_connectors()
-    return [to_data_connector_entry(connector) for connector in connectors]
+    status_map = await load_scan_status_map(db, [c.uuid for c in connectors])
+    return [
+        to_data_connector_entry(connector, status_map.get(connector.uuid))
+        for connector in connectors
+    ]
 
 
 @router.get("/data-connector-types")
@@ -85,7 +90,8 @@ async def update_data_connector(
     if connector is None:
         raise HTTPException(status_code=404, detail="Unknown data connector")
     await reload_watcher_configuration(request)
-    return to_data_connector_entry(connector)
+    status_map = await load_scan_status_map(db, [connector.uuid])
+    return to_data_connector_entry(connector, status_map.get(connector.uuid))
 
 
 @router.delete("/data-connectors/{connector_uuid}")

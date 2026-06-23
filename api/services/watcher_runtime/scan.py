@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import AsyncIterable, Iterable
 from pathlib import Path
 
-from config import BaseDataConnector, LocalFsDataConnector
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from config import BaseDataConnector, LocalFsDataConnector, get_settings
 from database import AsyncSessionLocal
+from models.sqlalchemy_models import DataSourceScanStatus, utc_now
 from rls import internal_context, rls_session
 from services.adapters.base import ContentEntry
 from services.content.indexed_content_item import upsert_directory_entry
@@ -22,6 +27,32 @@ from .shared import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def _upsert_scan_status(
+    db: AsyncSession,
+    connector_uuid: str,
+    **fields: object,
+) -> None:
+    """Insert-or-update the connector's scan status row with the given fields."""
+    fields["updated_at"] = utc_now()
+    stmt = pg_insert(DataSourceScanStatus).values(
+        connector_uuid=connector_uuid, **fields
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[DataSourceScanStatus.connector_uuid],
+        set_=fields,
+    )
+    await db.execute(stmt)
+
+
+async def mark_scan_failed(connector_uuid: str) -> None:
+    """Flag a connector's scan as failed in its own session (scan session is gone)."""
+    async with rls_session(AsyncSessionLocal, internal_context("watcher")) as db:
+        await _upsert_scan_status(
+            db, connector_uuid, state="failed", finished_at=utc_now()
+        )
+        await db.commit()
 
 
 async def _scan_entry(
@@ -110,8 +141,17 @@ async def _scan_existing_entries(
     folder: BaseDataConnector,
     entries: AsyncIterable[ContentEntry] | Iterable[ContentEntry],
 ) -> tuple[int, int]:
+    settings = get_settings()
+    commit_every = settings.SCAN_COMMIT_EVERY
+    heartbeat_seconds = settings.SCAN_HEARTBEAT_SECONDS
+
     count = 0
     skipped = 0
+    dirs = 0
+    processed = 0
+    last_commit_at = 0
+    started = time.monotonic()
+    last_heartbeat = started
 
     async with rls_session(AsyncSessionLocal, internal_context("watcher")) as db:
         svc = TaskQueueService(db)
@@ -128,11 +168,59 @@ async def _scan_existing_entries(
             auto_commit=False,
         )
 
+        await _upsert_scan_status(
+            db,
+            folder.uuid,
+            state="scanning",
+            dirs=0,
+            files_queued=0,
+            files_unchanged=0,
+            started_at=utc_now(),
+            finished_at=None,
+        )
+        await db.commit()
+
         async for entry in _iter_scan_entries(entries):
             queued_inc, skipped_inc = await _scan_entry(source, entry)
             count += queued_inc
             skipped += skipped_inc
+            processed += 1
+            if entry.is_dir:
+                dirs += 1
 
+            if processed - last_commit_at >= commit_every:
+                await _upsert_scan_status(
+                    db,
+                    folder.uuid,
+                    dirs=dirs,
+                    files_queued=count,
+                    files_unchanged=skipped,
+                )
+                await db.commit()
+                last_commit_at = processed
+
+            now = time.monotonic()
+            if now - last_heartbeat >= heartbeat_seconds:
+                last_heartbeat = now
+                logger.info(
+                    "Scan progress for %s: %d dirs, %d files queued, "
+                    "%d unchanged (%.0fs elapsed)",
+                    folder.name,
+                    dirs,
+                    count,
+                    skipped,
+                    now - started,
+                )
+
+        await _upsert_scan_status(
+            db,
+            folder.uuid,
+            state="done",
+            dirs=dirs,
+            files_queued=count,
+            files_unchanged=skipped,
+            finished_at=utc_now(),
+        )
         await db.commit()
 
     return count, skipped

@@ -661,6 +661,29 @@ class DataSource(Base):
     )
 
 
+class DataSourceScanStatus(Base):
+    """Live initial-scan progress for a connector (operational state, not config).
+
+    Kept separate from ``data_sources`` so the watcher actor can write progress
+    without holding write access to the admin-only connector configuration.
+    """
+
+    __tablename__ = "data_source_scan_status"
+
+    connector_uuid = Column(
+        String,
+        ForeignKey("data_sources.uuid", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    state = Column(String, nullable=False, default="idle")  # idle|scanning|done|failed
+    dirs = Column(Integer, nullable=False, default=0)
+    files_queued = Column(Integer, nullable=False, default=0)
+    files_unchanged = Column(Integer, nullable=False, default=0)
+    started_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=False, default=utc_now, onupdate=utc_now)
+
+
 class Permission(Base):
     """Access control entry for a data folder."""
 

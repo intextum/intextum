@@ -235,6 +235,12 @@ class Settings(BaseSettings):
     # Watcher polling defaults
     CHECK_INTERVAL: int = 30
 
+    # Initial-scan tuning: commit (checkpoint + make queued work visible) every
+    # this many processed entries, and emit a progress heartbeat log at most this
+    # often. Operational knobs; defaults are fine for most deployments.
+    SCAN_COMMIT_EVERY: int = 500
+    SCAN_HEARTBEAT_SECONDS: float = 30.0
+
     # OAuth2-Proxy Headers (configurable for different proxy setups)
     AUTH_HEADER_USER: str = "X-Forwarded-User"
     AUTH_HEADER_SUB: str = "X-Forwarded-User"

@@ -36,6 +36,7 @@ RLS_TABLES = sorted(
         "group_external_aliases",
         "conversations",
         "data_sources",
+        "data_source_scan_status",
         "permissions",
         "task_queue",
         "event_outbox",

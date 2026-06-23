@@ -229,6 +229,16 @@ EXPECTED_BASELINE_COLUMNS = {
         "created_at",
         "updated_at",
     ),
+    "data_source_scan_status": (
+        "connector_uuid",
+        "state",
+        "dirs",
+        "files_queued",
+        "files_unchanged",
+        "started_at",
+        "finished_at",
+        "updated_at",
+    ),
     "document_classes": (
         "id",
         "name",

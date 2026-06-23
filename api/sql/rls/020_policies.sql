@@ -60,6 +60,9 @@ ALTER TABLE conversations FORCE ROW LEVEL SECURITY;
 ALTER TABLE data_sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE data_sources FORCE ROW LEVEL SECURITY;
 
+ALTER TABLE data_source_scan_status ENABLE ROW LEVEL SECURITY;
+ALTER TABLE data_source_scan_status FORCE ROW LEVEL SECURITY;
+
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE permissions FORCE ROW LEVEL SECURITY;
 
@@ -377,6 +380,21 @@ CREATE POLICY data_sources_rls ON data_sources
         )
     )
     WITH CHECK (app.is_admin());
+
+-- Initial-scan progress: the watcher writes its own progress; admins read it for
+-- the UI. Unlike data_sources, the watcher is allowed to write here because this
+-- table holds operational status only, never connector configuration.
+DROP POLICY IF EXISTS data_source_scan_status_rls ON data_source_scan_status;
+CREATE POLICY data_source_scan_status_rls ON data_source_scan_status
+    FOR ALL
+    USING (
+        app.is_admin()
+        OR app.current_actor() = 'watcher'
+    )
+    WITH CHECK (
+        app.is_admin()
+        OR app.current_actor() = 'watcher'
+    );
 
 DROP POLICY IF EXISTS permissions_rls ON permissions;
 CREATE POLICY permissions_rls ON permissions

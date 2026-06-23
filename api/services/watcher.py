@@ -12,7 +12,7 @@ from rls import internal_context, rls_session
 from services.connector import ConnectorRuntimeService
 from services.watcher_runtime.local import _watch_folder, _watch_folder_smb
 from services.watcher_runtime.remote import _watch_s3_poll
-from services.watcher_runtime.scan import _scan_existing
+from services.watcher_runtime.scan import _scan_existing, mark_scan_failed
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +143,14 @@ class WatcherService:
         except Exception:
             self._scan_signatures.pop(connector_uuid, None)
             logger.exception("Initial scan crashed for connector %s", connector_uuid)
+            try:
+                await mark_scan_failed(folder.uuid)
+            except Exception:
+                logger.warning(
+                    "Failed to record scan failure for connector %s",
+                    connector_uuid,
+                    exc_info=True,
+                )
 
     def _start_scan_task(
         self,

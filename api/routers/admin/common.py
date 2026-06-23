@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import inspect
 import logging
+from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import get_settings
-from models.sqlalchemy_models import DataSource
+from models.sqlalchemy_models import DataSource, DataSourceScanStatus
 from services.connector import DataConnectorService
 from services.group import normalize_group_slug
 
@@ -112,6 +115,13 @@ class DataConnectorEntry(BaseModel):
     s3_prefix: str | None = None
     access_key: str | None = None
     region: str | None = None
+    # Initial-scan progress (read-only; populated from data_source_scan_status)
+    scan_state: str = "idle"
+    scan_dirs: int = 0
+    scan_files_queued: int = 0
+    scan_files_unchanged: int = 0
+    scan_started_at: datetime | None = None
+    scan_finished_at: datetime | None = None
 
 
 class CreateDataConnectorRequest(BaseModel):
@@ -188,7 +198,24 @@ class DataConnectorTypeEntry(BaseModel):
     fields: list[DataConnectorTypeFieldEntry]
 
 
-def to_data_connector_entry(connector: DataSource) -> DataConnectorEntry:
+async def load_scan_status_map(
+    db: AsyncSession, uuids: list[str]
+) -> dict[str, DataSourceScanStatus]:
+    """Load scan status rows keyed by connector UUID for the given connectors."""
+    if not uuids:
+        return {}
+    result = await db.execute(
+        select(DataSourceScanStatus).where(
+            DataSourceScanStatus.connector_uuid.in_(uuids)
+        )
+    )
+    return {row.connector_uuid: row for row in result.scalars().all()}
+
+
+def to_data_connector_entry(
+    connector: DataSource,
+    status: DataSourceScanStatus | None = None,
+) -> DataConnectorEntry:
     return DataConnectorEntry(
         uuid=connector.uuid,
         name=connector.name,
@@ -211,6 +238,12 @@ def to_data_connector_entry(connector: DataSource) -> DataConnectorEntry:
         s3_prefix=getattr(connector, "s3_prefix", None),
         access_key=getattr(connector, "access_key", None),
         region=getattr(connector, "region", None),
+        scan_state=status.state if status is not None else "idle",
+        scan_dirs=status.dirs if status is not None else 0,
+        scan_files_queued=status.files_queued if status is not None else 0,
+        scan_files_unchanged=status.files_unchanged if status is not None else 0,
+        scan_started_at=status.started_at if status is not None else None,
+        scan_finished_at=status.finished_at if status is not None else None,
     )
 
 

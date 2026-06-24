@@ -11,6 +11,7 @@ from auth.dependencies import require_admin
 from models.connector_types import LocalFsDataConnector
 from models.user import User
 from services.watcher import WatcherService
+from services.watcher_runtime.scan import scan_signature_key
 
 
 def _admin_user() -> User:
@@ -250,6 +251,74 @@ async def test_reload_config_scans_newly_watched_source(monkeypatch):
         assert svc._scan_signatures["source-1"] == svc._scan_signature(folder)
     finally:
         await svc.stop()
+
+
+@pytest.mark.asyncio
+async def test_completed_scan_not_rerun_after_restart(monkeypatch):
+    """A restart must not re-scan a connector whose completed scan still matches."""
+    folder = LocalFsDataConnector(
+        uuid="source-1",
+        name="source-1",
+        path="/tmp/source-1",
+        initial_scan=True,
+        force_polling=True,
+        poll_interval_seconds=3,
+    )
+    svc = WatcherService()
+
+    started: list[str] = []
+    monkeypatch.setattr(
+        svc, "_start_scan_task", lambda uuid, f, sig: started.append(uuid)
+    )
+
+    # Simulate a fresh process (empty in-memory signatures) where the DB already
+    # records a completed scan for the connector's current config.
+    monkeypatch.setattr(
+        svc,
+        "_load_completed_scan_signatures",
+        AsyncMock(return_value={"source-1": scan_signature_key(folder)}),
+    )
+
+    await svc._sync_initial_scan_tasks([folder])
+
+    assert started == []
+    assert svc._scan_signatures["source-1"] == svc._scan_signature(folder)
+
+
+@pytest.mark.asyncio
+async def test_changed_config_rescans_after_restart(monkeypatch):
+    """A config change since the last completed scan still triggers a re-scan."""
+    folder = LocalFsDataConnector(
+        uuid="source-1",
+        name="source-1",
+        path="/tmp/source-1",
+        initial_scan=True,
+        force_polling=True,
+        poll_interval_seconds=3,
+    )
+    stale = LocalFsDataConnector(
+        uuid="source-1",
+        name="source-1",
+        path="/tmp/old-path",
+        initial_scan=True,
+        force_polling=True,
+        poll_interval_seconds=3,
+    )
+    svc = WatcherService()
+
+    started: list[str] = []
+    monkeypatch.setattr(
+        svc, "_start_scan_task", lambda uuid, f, sig: started.append(uuid)
+    )
+    monkeypatch.setattr(
+        svc,
+        "_load_completed_scan_signatures",
+        AsyncMock(return_value={"source-1": scan_signature_key(stale)}),
+    )
+
+    await svc._sync_initial_scan_tasks([folder])
+
+    assert started == ["source-1"]
 
 
 @pytest.mark.asyncio

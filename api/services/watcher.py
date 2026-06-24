@@ -4,15 +4,20 @@ import asyncio
 import logging
 from pathlib import Path
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from config import BaseDataConnector, LocalFsDataConnector
 from database import AsyncSessionLocal
+from models.sqlalchemy_models import DataSourceScanStatus
 from rls import internal_context, rls_session
 from services.connector import ConnectorRuntimeService
 from services.watcher_runtime.local import _watch_folder, _watch_folder_smb
 from services.watcher_runtime.remote import _watch_s3_poll
-from services.watcher_runtime.scan import _scan_existing, mark_scan_failed
+from services.watcher_runtime.scan import (
+    _scan_existing,
+    mark_scan_failed,
+    scan_signature_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +221,46 @@ class WatcherService:
             )
         return needs_initial_scan
 
+    @staticmethod
+    async def _load_completed_scan_signatures(
+        uuids: list[str],
+    ) -> dict[str, str]:
+        """Return persisted signatures of connectors whose last scan completed."""
+        if not uuids:
+            return {}
+        async with rls_session(AsyncSessionLocal, internal_context("watcher")) as db:
+            result = await db.execute(
+                select(
+                    DataSourceScanStatus.connector_uuid,
+                    DataSourceScanStatus.signature,
+                ).where(
+                    DataSourceScanStatus.connector_uuid.in_(uuids),
+                    DataSourceScanStatus.state == "done",
+                    DataSourceScanStatus.signature.isnot(None),
+                )
+            )
+            return {uuid: signature for uuid, signature in result.all()}
+
+    async def _hydrate_scan_signatures(
+        self,
+        scannable_by_uuid: dict[str, BaseDataConnector],
+    ) -> None:
+        """Seed in-memory scan signatures from completed scans (survives restart).
+
+        Without this, ``self._scan_signatures`` starts empty on every process start
+        and every connector with ``initial_scan=true`` would be re-scanned. We only
+        seed when the persisted signature still matches the connector's current
+        config, so a real config change still triggers a fresh scan.
+        """
+        missing = [
+            uuid for uuid in scannable_by_uuid if uuid not in self._scan_signatures
+        ]
+        persisted = await self._load_completed_scan_signatures(missing)
+        for connector_uuid, stored_signature in persisted.items():
+            folder = scannable_by_uuid[connector_uuid]
+            if stored_signature == scan_signature_key(folder):
+                self._scan_signatures[connector_uuid] = self._scan_signature(folder)
+
     async def _sync_initial_scan_tasks(
         self,
         scannable: list[BaseDataConnector],
@@ -234,6 +279,8 @@ class WatcherService:
         for connector_uuid in list(self._scan_signatures):
             if connector_uuid not in scannable_by_uuid:
                 self._scan_signatures.pop(connector_uuid, None)
+
+        await self._hydrate_scan_signatures(scannable_by_uuid)
 
         for connector_uuid, folder in scannable_by_uuid.items():
             signature = self._scan_signature(folder)

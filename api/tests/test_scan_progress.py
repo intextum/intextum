@@ -59,7 +59,12 @@ async def test_scan_records_progress_and_marks_done(monkeypatch):
 
     monkeypatch.setattr(scan, "_scan_entry", fake_scan_entry)
 
-    folder = SimpleNamespace(uuid="conn-1", name="docs")
+    folder = SimpleNamespace(
+        uuid="conn-1",
+        name="docs",
+        connector_type="s3",
+        poll_interval_seconds=30,
+    )
     entries = [
         _entry("sub", is_dir=True),
         _entry("new.pdf", is_dir=False),
@@ -76,6 +81,8 @@ async def test_scan_records_progress_and_marks_done(monkeypatch):
     assert status_calls[-1]["files_queued"] == 1
     assert status_calls[-1]["files_unchanged"] == 1
     assert status_calls[-1]["finished_at"] is not None
+    # The completed scan records its config signature so a restart can skip it.
+    assert status_calls[-1]["signature"] == scan.scan_signature_key(folder)
 
 
 @pytest.mark.asyncio

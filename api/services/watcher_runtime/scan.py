@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from collections.abc import AsyncIterable, Iterable
@@ -27,6 +28,32 @@ from .shared import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def scan_signature_key(folder: BaseDataConnector) -> str:
+    """Stable string signature of a connector's scan-relevant config.
+
+    Mirrors ``WatcherService._watch_signature`` so a completed scan can be matched
+    against the current config across a watcher restart. A change to any captured
+    field yields a different key and therefore triggers a re-scan.
+    """
+    if isinstance(folder, LocalFsDataConnector):
+        parts: list = [
+            str(Path(folder.path).resolve()),
+            bool(folder.force_polling),
+            int(folder.poll_interval_seconds),
+            str(folder.watcher_type),
+            folder.smb_server or "",
+            folder.smb_share or "",
+            int(folder.smb_port),
+        ]
+    else:
+        parts = [
+            folder.connector_type,
+            folder.uuid,
+            int(folder.poll_interval_seconds),
+        ]
+    return json.dumps(parts)
 
 
 async def _upsert_scan_status(
@@ -216,6 +243,7 @@ async def _scan_existing_entries(
             db,
             folder.uuid,
             state="done",
+            signature=scan_signature_key(folder),
             dirs=dirs,
             files_queued=count,
             files_unchanged=skipped,

@@ -103,6 +103,7 @@ class DataSourceScanStatus(Base):
         primary_key=True,
     )
     state = Column(String, nullable=False, default="idle")  # idle|scanning|done|failed
+    signature = Column(String, nullable=True)  # config signature of a completed scan
     dirs = Column(Integer, nullable=False, default=0)
     files_queued = Column(Integer, nullable=False, default=0)
     files_unchanged = Column(Integer, nullable=False, default=0)

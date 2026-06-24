@@ -276,8 +276,8 @@ def test_training_artifact_upload_rejects_oversized_file(test_client, temp_data_
     from main import app
 
     app.dependency_overrides[require_worker_token] = lambda: "worker-1"
-    app.dependency_overrides[get_worker_task_context_applier] = (
-        lambda: _noop_worker_task_context_applier
+    app.dependency_overrides[get_worker_task_context_applier] = lambda: (
+        _noop_worker_task_context_applier
     )
     try:
         with (

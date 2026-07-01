@@ -150,6 +150,66 @@ async def test_accept_after_dismiss_clears_dismissed_reason():
 
 
 @pytest.mark.asyncio
+async def test_reset_classification_clears_state_and_cascades_to_extraction():
+    record = _record_with_state(
+        {
+            "classification_system_label": "Permit",
+            "classification_override_label": "Invoice",
+            "classification_effective_label": "Invoice",
+            "classification_review_status": "corrected",
+            "classification_dismissed_reason": None,
+            "extraction_effective_data_json": {"x": 1},
+            "extraction_review_status": "accepted",
+        }
+    )
+    db = AsyncMock()
+    with _patched_audit():
+        await submit_content_enrichment_review(
+            db,
+            record,
+            user=_make_user(),
+            reset_classification=True,
+        )
+    state = record.enrichment_state
+    assert state.classification_review_status is None
+    assert state.classification_override_label is None
+    assert state.classification_effective_label is None
+    assert state.classification_reviewed_by is None
+    # cascade: extraction cleared too
+    assert state.extraction_review_status is None
+    assert state.extraction_effective_data_json == {}
+    # system value is retained for re-classification suggestions
+    assert state.classification_system_label == "Permit"
+
+
+@pytest.mark.asyncio
+async def test_reset_extraction_alone_keeps_classification():
+    record = _record_with_state(
+        {
+            "classification_effective_label": "Permit",
+            "classification_review_status": "accepted",
+            "extraction_override_data_json": {"x": 1},
+            "extraction_effective_data_json": {"x": 1},
+            "extraction_review_status": "corrected",
+        }
+    )
+    db = AsyncMock()
+    with _patched_audit():
+        await submit_content_enrichment_review(
+            db,
+            record,
+            user=_make_user(),
+            reset_extraction=True,
+        )
+    state = record.enrichment_state
+    assert state.classification_review_status == "accepted"
+    assert state.classification_effective_label == "Permit"
+    assert state.extraction_review_status is None
+    assert state.extraction_override_data_json is None
+    assert state.extraction_effective_data_json == {}
+
+
+@pytest.mark.asyncio
 async def test_no_review_data_raises():
     record = _record_with_state()
     db = AsyncMock()

@@ -514,9 +514,11 @@ class ContentReviewSubmitRequest(BaseModel):
     classification_label: str | None = Field(default=None, min_length=1, max_length=120)
     classification_dismissed: bool | None = None
     classification_dismiss_reason: ContentClassificationDismissReason | None = None
+    classification_reset: bool | None = None
     extraction_data: dict[str, Any] | None = None
     extraction_dismissed: bool | None = None
     extraction_dismiss_reason: ContentExtractionDismissReasonInput | None = None
+    extraction_reset: bool | None = None
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 

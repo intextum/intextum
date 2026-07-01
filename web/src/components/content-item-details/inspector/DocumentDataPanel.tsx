@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,8 +126,10 @@ export const DocumentDataPanel = ({
   const systemClassification = classification?.system;
   const systemExtraction = extraction?.system;
   const supportsReview = file.capabilities?.supports_review ?? false;
-  const canEdit = Boolean(onSubmitReview && !file.immutable && supportsReview);
-  const canVerifyClass = Boolean(onVerifyClass && !file.immutable && supportsReview);
+  // Review edits target app-owned enrichment metadata, not the source file, so
+  // an immutable source (read-only connector) must not disable them.
+  const canEdit = Boolean(onSubmitReview && supportsReview);
+  const canVerifyClass = Boolean(onVerifyClass && supportsReview);
   const stale = hasStaleContentEnrichment(
     file.document_enrichment?.classification_lifecycle,
     file.document_enrichment?.extraction_lifecycle,
@@ -419,6 +422,34 @@ export const DocumentDataPanel = ({
     }
   };
 
+  const resetClassification = async () => {
+    if (!onSubmitReview) return;
+    try {
+      await onSubmitReview({ classification_reset: true });
+      notify("custom.content.details.classification_reset_saved", {
+        type: "success",
+        messageArgs: { defaultValue: "Classification reset" },
+      });
+    } catch (error) {
+      reportClientError(error, undefined, { routeName: "document-data:reset-classification" });
+      notify("custom.content.details.review_save_failed", { type: "error" });
+    }
+  };
+
+  const resetExtraction = async () => {
+    if (!onSubmitReview) return;
+    try {
+      await onSubmitReview({ extraction_reset: true });
+      notify("custom.content.details.extraction_reset_saved", {
+        type: "success",
+        messageArgs: { defaultValue: "Extraction data reset" },
+      });
+    } catch (error) {
+      reportClientError(error, undefined, { routeName: "document-data:reset-extraction-clear" });
+      notify("custom.content.details.review_save_failed", { type: "error" });
+    }
+  };
+
   const buckets = useMemo(() => {
     const attention: typeof entries = [];
     const attentionKeys = new Set<string>();
@@ -465,6 +496,10 @@ export const DocumentDataPanel = ({
   };
 
   const showResetExtractionAction = canEdit && canResetExtractionToAi;
+  const canResetClassification =
+    canEdit && Boolean(baseClassificationLabel || classification?.review_status);
+  const canResetExtraction = canEdit && Boolean(baseExtractionData || extraction?.review_status);
+  const hasResetActions = canResetClassification || canResetExtraction;
 
   const showStatePillInFooter = hasReviewableData && displayedReviewState === "needs_review";
 
@@ -544,6 +579,21 @@ export const DocumentDataPanel = ({
               <DropdownMenuItem onSelect={() => void dismissExtraction("schema_mismatch")}>
                 {translate("custom.content.content_list.review_session_dismiss_schema_mismatch")}
               </DropdownMenuItem>
+              {hasResetActions ? <DropdownMenuSeparator /> : null}
+              {canResetClassification ? (
+                <DropdownMenuItem onSelect={() => void resetClassification()}>
+                  {translate("custom.content.details.reset_classification", {
+                    defaultValue: "Reset classification to unclassified",
+                  })}
+                </DropdownMenuItem>
+              ) : null}
+              {canResetExtraction ? (
+                <DropdownMenuItem onSelect={() => void resetExtraction()}>
+                  {translate("custom.content.details.reset_extraction", {
+                    defaultValue: "Clear extraction data",
+                  })}
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}

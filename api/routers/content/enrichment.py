@@ -123,22 +123,34 @@ async def submit_file_review(
     update_extraction = "extraction_data" in requested_fields
     dismiss_classification = bool(request.classification_dismissed)
     dismiss_extraction = bool(request.extraction_dismissed)
+    reset_classification = bool(request.classification_reset)
+    reset_extraction = bool(request.extraction_reset)
 
-    if update_classification and dismiss_classification:
+    if sum((update_classification, dismiss_classification, reset_classification)) > 1:
         raise HTTPException(
             status_code=400,
-            detail="classification_label and classification_dismissed are mutually exclusive",
+            detail=(
+                "classification_label, classification_dismissed and classification_reset"
+                " are mutually exclusive"
+            ),
         )
-    if update_extraction and dismiss_extraction:
+    if sum((update_extraction, dismiss_extraction, reset_extraction)) > 1:
         raise HTTPException(
             status_code=400,
-            detail="extraction_data and extraction_dismissed are mutually exclusive",
+            detail=(
+                "extraction_data, extraction_dismissed and extraction_reset"
+                " are mutually exclusive"
+            ),
         )
-    if (
-        not update_classification
-        and not update_extraction
-        and not dismiss_classification
-        and not dismiss_extraction
+    if not any(
+        (
+            update_classification,
+            update_extraction,
+            dismiss_classification,
+            dismiss_extraction,
+            reset_classification,
+            reset_extraction,
+        )
     ):
         raise HTTPException(status_code=400, detail="No review data provided")
 
@@ -202,6 +214,8 @@ async def submit_file_review(
             update_extraction=update_extraction,
             dismiss_classification=dismiss_classification,
             dismiss_extraction=dismiss_extraction,
+            reset_classification=reset_classification,
+            reset_extraction=reset_extraction,
         )
     except ContentReviewConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

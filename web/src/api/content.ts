@@ -201,9 +201,11 @@ export interface ContentReviewSubmitPayload {
   classification_label?: string | null;
   classification_dismissed?: boolean | null;
   classification_dismiss_reason?: ContentClassificationDismissReason | null;
+  classification_reset?: boolean | null;
   extraction_data?: Record<string, unknown> | null;
   extraction_dismissed?: boolean | null;
   extraction_dismiss_reason?: Exclude<ContentExtractionDismissReason, "no_class"> | null;
+  extraction_reset?: boolean | null;
 }
 
 export interface ContentVerifyClassPayload {

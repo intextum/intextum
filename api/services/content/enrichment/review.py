@@ -228,6 +228,79 @@ async def _dismiss_extraction(
     )
 
 
+async def _clear_classification(
+    state: ContentItemEnrichmentState,
+    db: AsyncSession,
+    record: IndexedContentItem,
+    *,
+    user: User,
+    now: datetime,
+) -> None:
+    """Reset classification to an unreviewed, unclassified state."""
+    before_label = state.classification_effective_label
+    state.classification_override_class_id = None
+    state.classification_override_label = None
+    state.classification_effective_class_id = None
+    state.classification_effective_label = None
+    state.classification_review_status = None
+    state.classification_dismissed_reason = None
+    state.classification_reviewed_by = None
+    state.classification_reviewed_by_sub = None
+    state.classification_reviewed_at = None
+    history = json_list(state.classification_review_history_json)
+    history.append(_review_history_entry(user, now, action="cleared"))
+    state.classification_review_history_json = history
+    await _audit_review_event(
+        db,
+        record,
+        side="classification",
+        action="cleared",
+        summary="Classification cleared",
+        metadata={"before_label": before_label, "after_label": None},
+        user=user,
+    )
+
+
+async def _clear_extraction(
+    state: ContentItemEnrichmentState,
+    db: AsyncSession,
+    record: IndexedContentItem,
+    *,
+    user: User,
+    now: datetime,
+) -> None:
+    """Reset extraction to an unreviewed, empty state."""
+    before_fields = sorted_field_names(json_dict(state.extraction_effective_data_json))
+    state.extraction_override_data_json = None
+    state.extraction_override_class_id = None
+    state.extraction_override_class_label = None
+    state.extraction_effective_data_json = {}
+    state.extraction_effective_class_id = None
+    state.extraction_effective_class_label = None
+    state.extraction_effective_schema_id = None
+    state.extraction_effective_schema_name = None
+    state.extraction_review_status = None
+    state.extraction_dismissed_reason = None
+    state.extraction_reviewed_by = None
+    state.extraction_reviewed_by_sub = None
+    state.extraction_reviewed_at = None
+    history = json_list(state.extraction_review_history_json)
+    history.append(_review_history_entry(user, now, action="cleared"))
+    state.extraction_review_history_json = history
+    await _audit_review_event(
+        db,
+        record,
+        side="extraction",
+        action="cleared",
+        summary="Extraction cleared",
+        metadata={
+            "before_field_count": len(before_fields or []),
+            "before_fields": before_fields,
+        },
+        user=user,
+    )
+
+
 async def _accept_or_correct_classification(
     state: ContentItemEnrichmentState,
     db: AsyncSession,
@@ -383,11 +456,24 @@ async def submit_content_enrichment_review(
     update_extraction: bool = False,
     dismiss_classification: bool = False,
     dismiss_extraction: bool = False,
+    reset_classification: bool = False,
+    reset_extraction: bool = False,
 ) -> IndexedContentItem:
     """Persist one unified review decision for a file's enrichment data."""
     now = utc_now()
     state = ensure_state(record)
     handled_reviewable_part = False
+
+    if reset_classification:
+        await _clear_classification(state, db, record, user=user, now=now)
+        handled_reviewable_part = True
+        # Cascade: no class means any prior extraction no longer applies.
+        if not reset_extraction and not dismiss_extraction and not update_extraction:
+            reset_extraction = True
+
+    if reset_extraction:
+        await _clear_extraction(state, db, record, user=user, now=now)
+        handled_reviewable_part = True
 
     if dismiss_classification:
         if classification_dismiss_reason is None:
